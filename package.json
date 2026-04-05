@@ -2,15 +2,34 @@
   "name": "fullstack-template",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "concurrently -n server,client -c cyan,magenta \"pnpm --filter @template/server dev\" \"pnpm --filter @template/client dev\"",
-    "build": "pnpm --filter @template/client build",
-    "start": "tsx apps/server/src/index.ts",
-    "db:push": "pnpm --filter @template/server db:push",
-    "db:studio": "pnpm --filter @template/server db:studio"
+    "dev": "tsx server/src/index.ts",
+    "build": "vite build",
+    "start": "tsx server/src/index.ts",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "better-auth": "^1.2.7",
+    "drizzle-orm": "^0.43.1",
+    "drizzle-zod": "^0.7.0",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "postgres": "^3.4.5",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2",
-    "tsx": "^4.19.3"
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.1.1",
+    "@types/react-dom": "^19.1.1",
+    "@vitejs/plugin-react": "^4.4.1",
+    "drizzle-kit": "^0.31.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.1"
   }
 }

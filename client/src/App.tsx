@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
-import type { HealthResponse } from '@template/shared'
+import type { Post } from '@shared/schema'
 
 export default function App() {
-  const [health, setHealth] = useState<HealthResponse | null>(null)
+  const [health, setHealth] = useState<{ ok: boolean } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/health')
-      .then((r) => r.json() as Promise<HealthResponse>)
+      .then((r) => r.json() as Promise<{ ok: boolean }>)
       .then(setHealth)
       .catch((e: unknown) => setError(String(e)))
   }, [])
@@ -25,3 +25,8 @@ export default function App() {
     </main>
   )
 }
+
+// Example: Post type imported from shared schema (no runtime value needed here,
+// but demonstrates that @shared/* resolves in client code)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type _PostExample = Post

@@ -1,15 +1,14 @@
 # Fullstack Template
 
-A pnpm monorepo starter for a full-stack SaaS application.
+A single-repo full-stack SaaS starter.
 
 ## Stack
 
 | Layer | Technology |
 |---|---|
-| Monorepo | pnpm workspaces |
 | Frontend | Vite + React + TypeScript |
 | Backend | Express + TypeScript |
-| ORM | Drizzle ORM |
+| ORM | Drizzle ORM + drizzle-zod |
 | Database | PostgreSQL |
 | Auth | Better Auth (email/password) |
 | Object storage | MinIO (S3-compatible) |
@@ -20,15 +19,21 @@ A pnpm monorepo starter for a full-stack SaaS application.
 
 ```
 .
-├── apps/
-│   ├── client/          # Vite + React frontend
-│   └── server/          # Express backend
-├── packages/
-│   └── shared/          # Shared TypeScript types
-├── dist/
-│   └── client/          # Vite build output (git-ignored)
-├── docker-compose.yml   # Local dev infrastructure
-└── .env.example
+├── client/src/          # React frontend
+├── server/src/          # Express backend
+│   ├── index.ts         # Entry point
+│   ├── vite.ts          # Dev: Vite middleware setup
+│   ├── static.ts        # Prod: static file serving
+│   ├── auth.ts          # Better Auth config
+│   ├── env.ts           # Environment variables
+│   └── db/client.ts     # Drizzle client
+├── shared/
+│   └── schema.ts        # Drizzle tables + Zod schemas + inferred types
+├── index.html           # Vite entry point
+├── vite.config.ts
+├── tsconfig.json        # Single config for all three areas
+├── drizzle.config.ts
+└── docker-compose.yml
 ```
 
 ## Local development
@@ -43,7 +48,7 @@ pnpm install
 
 ```bash
 cp .env.example .env
-# Edit .env — at minimum set BETTER_AUTH_SECRET to a random string:
+# Set BETTER_AUTH_SECRET to a random string:
 openssl rand -base64 32
 ```
 
@@ -64,65 +69,78 @@ Services started:
 pnpm db:push
 ```
 
-> Better Auth creates its own tables automatically when it first handles a request.
-> To generate the Better Auth schema for Drizzle (recommended), run:
+> Better Auth creates its own tables automatically on first request.
+> To generate the Better Auth schema for Drizzle (recommended):
 > ```bash
-> pnpm --filter @template/server exec better-auth generate
+> npx better-auth generate
 > ```
-> Then paste the output into `apps/server/src/db/schema.ts`.
+> Then add the output to `shared/schema.ts`.
 
-**5. Start the dev servers**
+**5. Start the dev server**
 
 ```bash
 pnpm dev
 ```
 
-- Frontend (Vite): `http://localhost:5173`
-- Backend (Express): `http://localhost:3000`
-
-In development, Vite proxies all `/api` requests to Express, so there is no CORS configuration needed.
+A single Express process starts on `http://localhost:3000`. Vite runs as middleware inside
+it, so there is no second port, no proxy, and HMR works out of the box.
 
 ## Scripts
 
 | Script | Description |
 |---|---|
-| `pnpm dev` | Start frontend and backend in watch mode |
+| `pnpm dev` | Start everything (one process) |
 | `pnpm build` | Build client to `dist/client/` |
-| `pnpm start` | Start the server with tsx (production) |
+| `pnpm start` | Run the server in production mode |
 | `pnpm db:push` | Push Drizzle schema to the database |
 | `pnpm db:studio` | Open Drizzle Studio |
 
+## Shared types and validation
+
+`shared/schema.ts` is the single source of truth for data shapes:
+
+```ts
+// Define the table once
+export const posts = pgTable('posts', { … })
+
+// Derive Zod schema for request validation (server)
+export const insertPostSchema = createInsertSchema(posts)
+export type InsertPost = z.infer<typeof insertPostSchema>
+
+// Derive TypeScript type for client state
+export type Post = typeof posts.$inferSelect
+```
+
+Import anywhere with the `@shared/*` alias:
+
+```ts
+import type { Post } from '@shared/schema'               // client
+import { insertPostSchema } from '@shared/schema'        // server
+```
+
 ## Production architecture
 
-In production, a single Express process:
-
-1. Serves the Vite static build from `dist/client/`
-2. Falls back to `dist/client/index.html` for all non-API routes (SPA routing)
-3. Handles API requests under `/api`
-4. Handles auth requests under `/api/auth`
-
-Build output:
+In production (`NODE_ENV=production`), Express serves `dist/client/` as static files and
+falls back to `index.html` for all non-API routes. There is no separate Vite process.
 
 ```
-dist/
-└── client/          <- Vite build (served as static files)
+pnpm build   → dist/client/  (Vite build)
+pnpm start   → tsx server/src/index.ts  (Express, port 3000)
 ```
-
-Start command (used by Nixpacks): `tsx apps/server/src/index.ts`
 
 ## Deploying to Coolify
 
 1. Push this repo to GitHub/GitLab.
 2. Create a new **Nixpacks** service in Coolify pointing at the repo.
-3. Coolify detects `package.json`, runs `pnpm build`, then `tsx apps/server/src/index.ts`.
+3. Coolify detects `package.json`, runs `pnpm build`, then `tsx server/src/index.ts`.
 4. Add all variables from `.env.example` in the Coolify environment panel.
 5. Attach a PostgreSQL service and set `DATABASE_URL`.
 
-No `Dockerfile` is needed — Nixpacks handles everything via the root `build` and `start` scripts.
+No `Dockerfile` needed — Nixpacks handles it via the root `build` and `start` scripts.
 
 ## Auth
 
-Better Auth is wired into Express at `/api/auth/*`. To use the client SDK in the frontend:
+Better Auth is mounted at `/api/auth/*`. To use it in the client:
 
 ```ts
 import { createAuthClient } from 'better-auth/client'
@@ -130,17 +148,11 @@ import { createAuthClient } from 'better-auth/client'
 const authClient = createAuthClient({ baseURL: '/api/auth' })
 ```
 
-Only email/password is enabled by default. Add providers in `apps/server/src/auth.ts`.
+Only email/password is enabled by default. Add providers in `server/src/auth.ts`.
 
 ## Adding packages
 
 ```bash
-# Add a dependency to the server
-pnpm --filter @template/server add <package>
-
-# Add a dependency to the client
-pnpm --filter @template/client add <package>
-
-# Add a shared dev tool at the root
-pnpm add -w -D <package>
+pnpm add <package>        # runtime dependency
+pnpm add -D <package>     # dev dependency
 ```
