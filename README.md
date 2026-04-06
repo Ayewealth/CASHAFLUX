@@ -1,5 +1,33 @@
 # Fullstack Template
 
+<details>
+<summary>Prompt to recreate this template</summary>
+
+```
+Use the following framework and wiring conventions. Apply them to any new or existing repo.
+
+## Stack
+Single-repo (no monorepo tooling). Frontend: Vite + React + TypeScript in client/src/. Backend: Express + TypeScript in server/src/. Shared types and Drizzle schemas in shared/. ORM: Drizzle with postgres-js. Auth: Better Auth wired into Express with the Drizzle adapter. Local dev infra only: Docker Compose with Postgres, MinIO, Mailpit (no app service — the server always runs on the host).
+
+## Architecture rules
+- Single dev process: Vite runs as Express middleware in development (middlewareMode: true, no separate Vite port, no proxy). In production, Express serves the Vite static build from dist/client/ with a SPA fallback. API routes are under /api.
+- Root build script runs vite build only. The start script runs the server with tsx: tsx server/src/index.ts (no server build step).
+- server/src/index.ts branches on NODE_ENV: production calls serveStatic(app), development does const { setupVite } = await import('./vite') then setupVite(httpServer, app).
+- server/src/vite.ts exports setupVite(httpServer, app) — creates a Vite dev server in middleware mode, mounts vite.middlewares on Express, and adds a catch-all that transforms and serves index.html.
+- server/src/static.ts exports serveStatic(app) — express.static on dist/client/ plus a catch-all for index.html.
+- Single tsconfig.json at the root covering client/src/, server/src/, and shared/. moduleResolution: bundler. Path alias @shared/* → ./shared/*.
+- vite.config.ts at the root: @vitejs/plugin-react, resolve.alias for @shared, outDir: dist/client. No proxy config.
+- index.html at the root. Script src points to /client/src/main.tsx.
+- server/src/env.ts loads dotenv and exports a typed env object with required() and optional() helpers. Document all vars in .env.example.
+- Drizzle config at root pointing at shared/schema.ts. Include db:push and db:studio scripts.
+- Better Auth configured with the Drizzle adapter, basePath: /api/auth. Mounted in Express with app.all('/api/auth/*', toNodeHandler(auth)).
+- shared/schema.ts uses drizzle-zod: for each Drizzle table, call createInsertSchema(table) and export the Zod schema plus inferred types (InsertX via z.infer, X via $inferSelect). This is the single source of truth — server validates with Zod, client imports the TypeScript types via @shared/*.
+- Docker Compose for local dev only (no app service — server runs on the host). Include Postgres, MinIO, and Mailpit with named volumes, healthchecks, and correct service dependencies.
+- Nixpacks-compatible: root package.json has build and start scripts, no Dockerfile needed.
+```
+
+</details>
+
 A single-repo full-stack SaaS starter.
 
 ## Stack
