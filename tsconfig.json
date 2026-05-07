@@ -2,6 +2,7 @@
   "include": ["client/src/**/*", "shared/**/*", "server/src/**/*"],
   "compilerOptions": {
     "noEmit": true,
+    "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "preserve",

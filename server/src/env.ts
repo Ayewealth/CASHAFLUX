@@ -22,7 +22,4 @@ export const env = {
   S3_BUCKET: optional('S3_BUCKET', ''),
   S3_ACCESS_KEY: optional('S3_ACCESS_KEY', ''),
   S3_SECRET_KEY: optional('S3_SECRET_KEY', ''),
-
-  SMTP_HOST: optional('SMTP_HOST', 'localhost'),
-  SMTP_PORT: Number(optional('SMTP_PORT', '1025')),
 } as const

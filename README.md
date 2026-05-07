@@ -7,7 +7,7 @@
 Use the following framework and wiring conventions. Apply them to any new or existing repo.
 
 ## Stack
-Single-repo (no monorepo tooling). Frontend: Vite + React + TypeScript in client/src/. Backend: Express + TypeScript in server/src/. Shared types and Drizzle schemas in shared/. ORM: Drizzle with postgres-js. Auth: Better Auth wired into Express with the Drizzle adapter. Local dev infra only: Docker Compose with Postgres, MinIO, Mailpit (no app service — the server always runs on the host).
+Single-repo (no monorepo tooling). Frontend: Vite + React + TypeScript in client/src/. Backend: Express + TypeScript in server/src/. Shared types and Drizzle schemas in shared/. ORM: Drizzle with postgres-js. Auth: Better Auth wired into Express with the Drizzle adapter. Email: Resend. Local dev infra only: Docker Compose with Postgres and MinIO (no app service — the server always runs on the host).
 
 ## Architecture rules
 - Single dev process: Vite runs as Express middleware in development (middlewareMode: true, no separate Vite port, no proxy). In production, Express serves the Vite static build from dist/client/ with a SPA fallback. API routes are under /api.
@@ -22,7 +22,7 @@ Single-repo (no monorepo tooling). Frontend: Vite + React + TypeScript in client
 - Drizzle config at root pointing at shared/schema.ts. Include db:push and db:studio scripts.
 - Better Auth configured with the Drizzle adapter, basePath: /api/auth. Mounted in Express with app.all('/api/auth/*', toNodeHandler(auth)).
 - shared/schema.ts uses drizzle-zod: for each Drizzle table, call createInsertSchema(table) and export the Zod schema plus inferred types (InsertX via z.infer, X via $inferSelect). This is the single source of truth — server validates with Zod, client imports the TypeScript types via @shared/*.
-- Docker Compose for local dev only (no app service — server runs on the host). Include Postgres, MinIO, and Mailpit with named volumes, healthchecks, and correct service dependencies.
+- Docker Compose for local dev only (no app service — server runs on the host). Include Postgres and MinIO with named volumes, healthchecks, and correct service dependencies. Use Resend for email instead of local SMTP capture.
 - Nixpacks-compatible: root package.json has build and start scripts, no Dockerfile needed.
 ```
 
@@ -40,7 +40,7 @@ A single-repo full-stack SaaS starter.
 | Database | PostgreSQL |
 | Auth | Better Auth (email/password) |
 | Object storage | MinIO (S3-compatible) |
-| Email (dev) | Mailpit |
+| Email | Resend |
 | Deploy | Coolify via Nixpacks |
 
 ## Project structure
@@ -89,7 +89,8 @@ docker compose up -d
 Services started:
 - PostgreSQL on `localhost:5432`
 - MinIO on `localhost:9000` (console at `localhost:9001`)
-- Mailpit SMTP on `localhost:1025` (web UI at `localhost:8025`)
+
+Email is sent through Resend. When adding email sending, set `RESEND_API_KEY` and `EMAIL_FROM` in `.env`.
 
 **4. Push the database schema**
 
