@@ -17,9 +17,4 @@ export const env = {
   DATABASE_URL: required('DATABASE_URL'),
 
   BETTER_AUTH_SECRET: required('BETTER_AUTH_SECRET'),
-
-  S3_ENDPOINT: optional('S3_ENDPOINT', ''),
-  S3_BUCKET: optional('S3_BUCKET', ''),
-  S3_ACCESS_KEY: optional('S3_ACCESS_KEY', ''),
-  S3_SECRET_KEY: optional('S3_SECRET_KEY', ''),
 } as const
