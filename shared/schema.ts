@@ -66,7 +66,7 @@ export const verification = pgTable('verification', {
 // ─── Tables ───
 
 export const users = pgTable('users', {
-  id: text('id').primaryKey(),
+  id: text('id').primaryKey().references(() => user.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
   emailVerified: boolean('email_verified').default(false).notNull(),
