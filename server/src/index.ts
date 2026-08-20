@@ -1,5 +1,6 @@
 import express from 'express'
 import { createServer } from 'http'
+import rateLimit from 'express-rate-limit'
 import { toNodeHandler } from 'better-auth/node'
 import { auth } from './auth'
 import { env } from './env'
@@ -9,6 +10,19 @@ const app = express()
 const httpServer = createServer(app)
 
 app.use(express.json())
+
+// Rate limit auth endpoints: 10 requests / minute / IP.
+// Mounted before the auth handler so it short-circuits abuse of
+// sign-in / sign-up / password-reset endpoints.
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later' },
+})
+
+app.use('/api/auth', authLimiter)
 
 // Auth — must be mounted before any catch-all routes.
 // Handles /api/auth/sign-in, /api/auth/sign-up, /api/auth/sign-out, etc.
