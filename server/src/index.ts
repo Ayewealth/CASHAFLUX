@@ -6,6 +6,8 @@ import { auth } from './auth'
 import { env } from './env'
 import { serveStatic } from './static'
 import { requireAuth } from './middleware/auth'
+import { db } from './db/client'
+import { organizations, orgMembers } from '@shared/schema'
 import './types'
 
 const app = express()
@@ -35,6 +37,29 @@ app.all('/api/auth/*', toNodeHandler(auth))
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true })
+})
+
+// Onboarding — create organization + member record
+app.post('/api/onboarding', requireAuth, async (req, res) => {
+  const { businessName, businessType, industry, fiscalYearStart, plan } = req.body
+  try {
+    const [org] = await db.insert(organizations).values({
+      id: crypto.randomUUID(),
+      ownerUserId: req.user!.id,
+      name: businessName || 'My Business',
+      type: businessType || 'sole_proprietor',
+      fiscalYearStart: typeof fiscalYearStart === 'number' ? fiscalYearStart : 1,
+    }).returning()
+    await db.insert(orgMembers).values({
+      id: crypto.randomUUID(),
+      orgId: org.id,
+      userId: req.user!.id,
+      role: 'owner',
+    })
+    res.json({ orgId: org.id })
+  } catch {
+    res.status(500).json({ error: 'Failed to create organization' })
+  }
 })
 
 // --- Protected API routes ---

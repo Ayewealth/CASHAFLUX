@@ -20,7 +20,7 @@
 OpenCode cannot switch models automatically. Before starting any task, analyze the domain of the work and check the currently active model. If the active model does not match the required domain, you MUST STOP execution entirely and explicitly instruct the user to switch models.
 
 - **Frontend & UI Design:** Use **Gemini 2.5**.
-- **Backend & Complex Logic:** Use **DeepSeek v4 Pro**.
+- **Backend & Complex Logic:** Use **GLM-5.2**.
 - **Planning & Simple Tasks:** Use **DeepSeek v4 Flash**.
 
 **Rule of Thumb:** Do not execute frontend tasks with DeepSeek, and do not execute backend tasks with Gemini. If a model switch is required, halt and output: "Please switch to [Model Name] for this task." Wait for the user to confirm the switch before proceeding with your skills.
