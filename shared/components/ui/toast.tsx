@@ -130,7 +130,7 @@ function ToastClose({
   )
 }
 
-function ToastIcon({ type }: { type: string | undefined }) {
+function ToastIcon({ type }: { type?: string }) {
   let icon: React.ReactNode = null
 
   if (type === "success") {
