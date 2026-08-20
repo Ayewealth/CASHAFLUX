@@ -10,8 +10,8 @@ export default defineConfig({
   plugins: [tailwindcss(), react()],
   resolve: {
     alias: {
-      // Resolved by Vite for client code; tsconfig paths covers type-checking
       '@shared': path.resolve(__dirname, 'shared'),
+      '@': path.resolve(__dirname, 'client', 'src'),
     },
   },
   build: {
