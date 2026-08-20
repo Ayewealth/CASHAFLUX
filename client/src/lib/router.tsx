@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router'
 
+import AuthGuard from '../components/AuthGuard'
 import HomePage from '../pages/HomePage'
 
 export const router = createBrowserRouter([
@@ -31,21 +32,27 @@ export const router = createBrowserRouter([
   },
   {
     path: '/dashboard',
-    lazy: () => import('../pages/dashboard/Layout').then((m) => ({ Component: m.default })),
+    element: <AuthGuard />,
     children: [
-      { index: true, lazy: () => import('../pages/dashboard/DashboardPage').then((m) => ({ Component: m.default })) },
-      { path: 'invoices', lazy: () => import('../pages/dashboard/InvoicesPage').then((m) => ({ Component: m.default })) },
-      { path: 'invoices/new', lazy: () => import('../pages/dashboard/InvoiceFormPage').then((m) => ({ Component: m.default })) },
-      { path: 'invoices/:id/edit', lazy: () => import('../pages/dashboard/InvoiceFormPage').then((m) => ({ Component: m.default })) },
-      { path: 'expenses', lazy: () => import('../pages/dashboard/ExpensesPage').then((m) => ({ Component: m.default })) },
-      { path: 'expenses/new', lazy: () => import('../pages/dashboard/ExpenseFormPage').then((m) => ({ Component: m.default })) },
-      { path: 'clients', lazy: () => import('../pages/dashboard/ClientsPage').then((m) => ({ Component: m.default })) },
-      { path: 'bank', lazy: () => import('../pages/dashboard/BankPage').then((m) => ({ Component: m.default })) },
-      { path: 'reports', lazy: () => import('../pages/dashboard/ReportsPage').then((m) => ({ Component: m.default })) },
-      { path: 'tax', lazy: () => import('../pages/dashboard/TaxCentrePage').then((m) => ({ Component: m.default })) },
-      { path: 'payroll', lazy: () => import('../pages/dashboard/PayrollPage').then((m) => ({ Component: m.default })) },
-      { path: 'team', lazy: () => import('../pages/dashboard/TeamPage').then((m) => ({ Component: m.default })) },
-      { path: 'settings', lazy: () => import('../pages/dashboard/SettingsPage').then((m) => ({ Component: m.default })) },
+      {
+        path: '',
+        lazy: () => import('../pages/dashboard/Layout').then((m) => ({ Component: m.default })),
+        children: [
+          { index: true, lazy: () => import('../pages/dashboard/DashboardPage').then((m) => ({ Component: m.default })) },
+          { path: 'invoices', lazy: () => import('../pages/dashboard/InvoicesPage').then((m) => ({ Component: m.default })) },
+          { path: 'invoices/new', lazy: () => import('../pages/dashboard/InvoiceFormPage').then((m) => ({ Component: m.default })) },
+          { path: 'invoices/:id/edit', lazy: () => import('../pages/dashboard/InvoiceFormPage').then((m) => ({ Component: m.default })) },
+          { path: 'expenses', lazy: () => import('../pages/dashboard/ExpensesPage').then((m) => ({ Component: m.default })) },
+          { path: 'expenses/new', lazy: () => import('../pages/dashboard/ExpenseFormPage').then((m) => ({ Component: m.default })) },
+          { path: 'clients', lazy: () => import('../pages/dashboard/ClientsPage').then((m) => ({ Component: m.default })) },
+          { path: 'bank', lazy: () => import('../pages/dashboard/BankPage').then((m) => ({ Component: m.default })) },
+          { path: 'reports', lazy: () => import('../pages/dashboard/ReportsPage').then((m) => ({ Component: m.default })) },
+          { path: 'tax', lazy: () => import('../pages/dashboard/TaxCentrePage').then((m) => ({ Component: m.default })) },
+          { path: 'payroll', lazy: () => import('../pages/dashboard/PayrollPage').then((m) => ({ Component: m.default })) },
+          { path: 'team', lazy: () => import('../pages/dashboard/TeamPage').then((m) => ({ Component: m.default })) },
+          { path: 'settings', lazy: () => import('../pages/dashboard/SettingsPage').then((m) => ({ Component: m.default })) },
+        ],
+      },
     ],
   },
 ])

@@ -15,7 +15,7 @@ export default function AuthGuard() {
   }
 
   if (!session) {
-    void navigate('/login', { replace: true })
+    navigate('/login', { replace: true })
     return null
   }
 
