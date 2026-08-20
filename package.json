@@ -1,5 +1,5 @@
 {
-  "name": "fullstack-template",
+  "name": "cashaflux",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "tsx server/src/index.ts",
     "build": "vite build",
-    "start": "tsx server/src/index.ts",
+    "start": "tsx watch server/src/index.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"
   },

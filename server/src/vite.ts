@@ -20,7 +20,7 @@ export async function setupVite(httpServer: Server, app: Express) {
   app.use(vite.middlewares)
 
   // SPA fallback: transform and serve index.html for every non-API route
-  app.use('/{*path}', async (req, res, next) => {
+  app.use('*', async (req, res, next) => {
     try {
       const template = await fs.promises.readFile(
         path.resolve(process.cwd(), 'index.html'),
