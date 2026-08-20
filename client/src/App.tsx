@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import type { Post } from '@shared/schema'
 
 export default function App() {
   const [health, setHealth] = useState<{ ok: boolean } | null>(null)
@@ -25,8 +24,3 @@ export default function App() {
     </main>
   )
 }
-
-// Example: Post type imported from shared schema (no runtime value needed here,
-// but demonstrates that @shared/* resolves in client code)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-type _PostExample = Post
