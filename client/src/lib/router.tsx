@@ -20,6 +20,16 @@ export const router = createBrowserRouter([
   { path: '/forgot-password', lazy: () => import('../pages/ForgotPasswordPage').then((m) => ({ Component: m.default })) },
   { path: '/reset-password', lazy: () => import('../pages/ResetPasswordPage').then((m) => ({ Component: m.default })) },
   {
+    path: '/onboarding',
+    lazy: () => import('../pages/onboarding/OnboardingLayout').then((m) => ({ Component: m.default })),
+    children: [
+      { index: true, lazy: () => import('../pages/onboarding/Step1BusinessProfile').then((m) => ({ Component: m.default })) },
+      { path: 'step-2', lazy: () => import('../pages/onboarding/Step2CurrencyLocale').then((m) => ({ Component: m.default })) },
+      { path: 'step-3', lazy: () => import('../pages/onboarding/Step3InviteTeam').then((m) => ({ Component: m.default })) },
+      { path: 'step-4', lazy: () => import('../pages/onboarding/Step4ChoosePlan').then((m) => ({ Component: m.default })) },
+    ],
+  },
+  {
     path: '/dashboard',
     lazy: () => import('../pages/dashboard/Layout').then((m) => ({ Component: m.default })),
     children: [

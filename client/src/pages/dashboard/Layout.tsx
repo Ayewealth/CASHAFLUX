@@ -1,6 +1,23 @@
-import { Outlet } from 'react-router'
+import { useNavigate, Outlet } from 'react-router'
+import { authClient } from '../../lib/auth-client'
 
-export default function DashboardLayout() {
+export default function Layout() {
+  const navigate = useNavigate()
+  const { data: session, isPending } = authClient.useSession()
+
+  if (isPending) {
+    return (
+      <div className="min-h-screen bg-bg flex items-center justify-center">
+        <div className="animate-pulse text-text-muted h-6 w-32 rounded-md bg-muted" />
+      </div>
+    )
+  }
+
+  if (!session) {
+    void navigate('/login', { replace: true })
+    return null
+  }
+
   return (
     <div className="min-h-screen bg-bg flex">
       <aside className="w-64 bg-primary text-white p-4">
