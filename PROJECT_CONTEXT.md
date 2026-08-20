@@ -197,7 +197,7 @@ Build Stripe subscriptions with **normal webhook support**, but also add an **on
 ### Setup
 
 - Create two products in Stripe: **Pro** and **Business**, each with a monthly price and an annual price (Pro only has an annual price per Section 5; Business is monthly-only unless later extended).
-- Copy the Price IDs into `STRIPE_PRO_PRICE_ID` and `STRIPE_BUSINESS_PRICE_ID` (Section 14).
+- Copy the Price IDs into `STRIPE_PRICE_PRO_MONTHLY`, `STRIPE_PRICE_PRO_ANNUAL`, `STRIPE_PRICE_BUSINESS_MONTHLY`, and `STRIPE_PRICE_BUSINESS_ANNUAL` (Section 14).
 - Register the `/api/stripe/webhook` endpoint in the Stripe dashboard.
 
 ### Source of truth
@@ -493,8 +493,10 @@ EMAIL_FROM=                      # e.g. hello@cashaflux.com
 # Stripe
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
-STRIPE_PRO_PRICE_ID=
-STRIPE_BUSINESS_PRICE_ID=
+STRIPE_PRICE_PRO_MONTHLY=
+STRIPE_PRICE_PRO_ANNUAL=
+STRIPE_PRICE_BUSINESS_MONTHLY=
+STRIPE_PRICE_BUSINESS_ANNUAL=
 
 # Cloudflare R2
 R2_ACCOUNT_ID=
