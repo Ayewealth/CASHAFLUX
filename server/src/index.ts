@@ -5,6 +5,8 @@ import { toNodeHandler } from 'better-auth/node'
 import { auth } from './auth'
 import { env } from './env'
 import { serveStatic } from './static'
+import { requireAuth } from './middleware/auth'
+import './types'
 
 const app = express()
 const httpServer = createServer(app)
@@ -34,6 +36,23 @@ app.all('/api/auth/*', toNodeHandler(auth))
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true })
 })
+
+// --- Protected API routes ---
+// Every business endpoint below requires an authenticated Better Auth
+// session. Public/unauthenticated endpoints (/api/auth/*, /api/health,
+// /api/blog, /api/contact) are mounted above this gate and are skipped.
+app.use('/api/invoices', requireAuth)
+app.use('/api/expenses', requireAuth)
+app.use('/api/clients', requireAuth)
+app.use('/api/bank-accounts', requireAuth)
+app.use('/api/bank-transactions', requireAuth)
+app.use('/api/reports', requireAuth)
+app.use('/api/tax', requireAuth)
+app.use('/api/mileage', requireAuth)
+app.use('/api/team', requireAuth)
+app.use('/api/settings', requireAuth)
+app.use('/api/subscription', requireAuth)
+app.use('/api/dashboard', requireAuth)
 
 // --- Static / Vite ---
 // In production: serve pre-built client from dist/client/
