@@ -14,6 +14,7 @@ app.use(express.json())
 // Rate limit auth endpoints: 10 requests / minute / IP.
 // Mounted before the auth handler so it short-circuits abuse of
 // sign-in / sign-up / password-reset endpoints.
+// TODO: swap for rate-limit-redis before multi-instance
 const authLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 10,

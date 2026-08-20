@@ -1,4 +1,4 @@
-// Email sending service — stub.
+// Email sending service -- stub.
 // Task 2 will implement this with the Resend SDK (env.RESEND_API_KEY / env.EMAIL_FROM).
 // The dynamic import in auth.ts defers resolution to runtime, but TypeScript still
 // type-checks the module surface, so the contract is declared here.
