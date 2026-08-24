@@ -12,6 +12,7 @@ import {
   SelectTrigger,
 } from '../../components/ui/select'
 import { IndustryCombobox } from '../../components/IndustryCombobox'
+import Logo from '../../components/shared/Logo'
 
 type Step = 1 | 2 | 3 | 4
 
@@ -337,12 +338,7 @@ export default function OnboardingPage() {
     <div className="min-h-[100dvh] bg-bg text-text">
       <header className="sticky top-0 z-10 border-b border-border bg-surface/80 backdrop-blur-sm">
         <div className="max-w-3xl mx-auto px-6 h-14 flex items-center">
-          <div className="flex items-center gap-2 font-semibold text-primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-            Cashaflux
-          </div>
+          <Logo />
         </div>
       </header>
 

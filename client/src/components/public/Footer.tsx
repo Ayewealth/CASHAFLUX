@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import NewsletterForm from '../shared/NewsletterForm'
 import StatCounter from '../shared/StatCounter'
 import SmoothScrollReveal from '../shared/SmoothScrollReveal'
+import Logo from '../shared/Logo'
 
 const FOOTER_LINKS: Record<string, { label: string; href: string; disabled?: boolean }[]> = {
   Product: [
@@ -32,12 +33,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-16 lg:pt-20 pb-10">
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 mb-12 pb-12 border-b border-white/10">
           <div>
-            <Link to="/" className="flex items-center gap-2.5 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white font-bold text-sm">
-                C
-              </div>
-              <span className="text-lg font-bold tracking-tight">Cashaflux</span>
-            </Link>
+            <Logo />
             <p className="text-sm text-white/50 leading-relaxed max-w-sm mb-6">
               Simple, fast accounting for American small businesses. Invoicing, expenses, and
               tax-ready reports — all in one place.

@@ -16,12 +16,12 @@ import ComparisonTable from '../components/shared/ComparisonTable'
 import { usePageMeta } from '@/lib/usePageMeta'
 
 const FEATURES = [
-  { icon: Receipt, title: 'Smart Invoicing', desc: 'Create professional invoices in seconds. Auto-numbering, recurring schedules, and instant sending via email with PDF attachments.', tint: 'bg-blue-50/50', screenshotFallback: 'Invoice creation interface' },
-  { icon: Banknote, title: 'Expense Tracking', desc: 'Log expenses with IRS Schedule C categories. Drag-and-drop receipt upload with automatic thumbnail generation.', tint: 'bg-blue-50/50', screenshotFallback: 'Expense log interface' },
-  { icon: BarChart3, title: 'Bank Reconciliation', desc: 'Import bank CSV files, auto-match transactions to invoices and expenses, and reconcile with one click.', tint: 'bg-amber-50/50', screenshotFallback: 'Bank reconciliation view' },
-  { icon: PieChart, title: 'Financial Reports', desc: 'Profit & Loss, Balance Sheet, Cash Flow, A/R Aging, and more — all exportable as PDF or CSV with Recharts visualizations.', tint: 'bg-rose-50/50', screenshotFallback: 'Reports dashboard' },
-  { icon: FileText, title: 'Tax-Ready Exports', desc: 'Quarterly estimated tax reminders, 1099 contractor tracker, mileage log with IRS rate, and one-click accountant hand-off.', tint: 'bg-violet-50/50', screenshotFallback: 'Tax centre overview' },
-  { icon: Users, title: 'Team Collaboration', desc: 'Invite team members with role-based access. Owner, Admin, Accountant, and Member roles with granular permissions.', tint: 'bg-cyan-50/50', screenshotFallback: 'Team management panel' },
+  { icon: Receipt, title: 'Smart Invoicing', desc: 'Create professional invoices in seconds. Auto-numbering, recurring schedules, and instant sending via email with PDF attachments.', tint: 'bg-blue-50/50', screenshotFallback: 'Invoice creation interface', screenshotSrc: '/screenshots/features-invoicing-card.png' },
+  { icon: Banknote, title: 'Expense Tracking', desc: 'Log expenses with IRS Schedule C categories. Drag-and-drop receipt upload with automatic thumbnail generation.', tint: 'bg-blue-50/50', screenshotFallback: 'Expense log interface', screenshotSrc: '/screenshots/features-expenses-card.png' },
+  { icon: BarChart3, title: 'Bank Reconciliation', desc: 'Import bank CSV files, auto-match transactions to invoices and expenses, and reconcile with one click.', tint: 'bg-amber-50/50', screenshotFallback: 'Bank reconciliation view', screenshotSrc: '/screenshots/features-bank-card.png' },
+  { icon: PieChart, title: 'Financial Reports', desc: 'Profit & Loss, Balance Sheet, Cash Flow, A/R Aging, and more — all exportable as PDF or CSV with Recharts visualizations.', tint: 'bg-rose-50/50', screenshotFallback: 'Reports dashboard', screenshotSrc: '/screenshots/features-reports-card.png' },
+  { icon: FileText, title: 'Tax-Ready Exports', desc: 'Quarterly estimated tax reminders, 1099 contractor tracker, mileage log with IRS rate, and one-click accountant hand-off.', tint: 'bg-violet-50/50', screenshotFallback: 'Tax centre overview', screenshotSrc: '/screenshots/features-tax-card.png' },
+  { icon: Users, title: 'Team Collaboration', desc: 'Invite team members with role-based access. Owner, Admin, Accountant, and Member roles with granular permissions.', tint: 'bg-cyan-50/50', screenshotFallback: 'Team management panel', screenshotSrc: '/screenshots/features-team-card.png' },
 ]
 
 const HOW_IT_WORKS = [
@@ -215,7 +215,7 @@ export default function HomePage() {
               <SmoothScrollReveal key={feature.title} delay={0.08 * i}>
                 <div className={`p-5 rounded-2xl border border-border/50 hover:border-brand-navy/20 hover:shadow-md hover:shadow-brand-navy/5 transition-all duration-300 ${feature.tint}`}>
                   <div className="h-28 rounded-xl overflow-hidden border border-border/50 mb-4">
-                    <Screenshot fallback={feature.screenshotFallback} alt={feature.title} />
+                    <Screenshot fallback={feature.screenshotFallback} src={feature.screenshotSrc} alt={feature.title} />
                   </div>
                   <div className="flex items-center gap-3 mb-2">
                     <div className="w-9 h-9 rounded-lg bg-white/80 flex items-center justify-center border border-border/50">

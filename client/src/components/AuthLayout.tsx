@@ -1,5 +1,6 @@
 import { type ReactNode, type FC } from 'react'
 import { Link } from 'react-router'
+import Logo from '../components/shared/Logo'
 
 interface BrandContent {
   headline: string
@@ -32,11 +33,7 @@ export const AuthLayout: FC<AuthLayoutProps> = ({
         <div className="absolute inset-0 flex flex-col justify-between p-12 xl:p-16">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center backdrop-blur-sm">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-white">
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </div>
+            <Logo showWordmark={false} light iconBg />
             <span className="text-white font-semibold text-lg tracking-tight">Cashaflux</span>
           </div>
 
@@ -70,14 +67,9 @@ export const AuthLayout: FC<AuthLayoutProps> = ({
       <div className="flex-1 flex items-center justify-center p-6 sm:p-8 lg:p-12">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
-          <Link to="/" className="lg:hidden flex items-center gap-2.5 mb-8 text-text hover:opacity-80 transition-opacity">
-            <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white">
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </div>
-            <span className="font-semibold text-base tracking-tight">Cashaflux</span>
-          </Link>
+          <div className="lg:hidden mb-8">
+            <Logo />
+          </div>
 
           {/* Desktop back link */}
           {backLink && (

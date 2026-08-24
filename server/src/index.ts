@@ -12,6 +12,7 @@ import { seedIndustries } from './seed'
 import './types'
 
 const app = express()
+app.set('trust proxy', true)
 const httpServer = createServer(app)
 
 // Security headers
@@ -37,7 +38,7 @@ app.use(helmet({
 
 // CORS — restrict to primary domain in production
 if (env.NODE_ENV === 'production') {
-  app.use(cors({ origin: 'https://cashaflux.com', credentials: true }))
+  app.use(cors({ origin: env.BETTER_AUTH_URL, credentials: true }))
 } else {
   app.use(cors({ origin: true, credentials: true }))
 }

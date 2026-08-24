@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { authClient } from '@/lib/auth-client'
 import { useSubscriptionStatus } from '@/features/subscription/hooks'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import Logo from '@/components/shared/Logo'
 
 const NAV_ITEMS = [
   { label: 'Features', href: '/features' },
@@ -99,12 +100,7 @@ export default function Header() {
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-18">
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-lg bg-brand-navy flex items-center justify-center text-white font-bold text-sm group-hover:bg-brand-navy-light transition-colors duration-300">
-              C
-            </div>
-            <span className="text-lg font-bold text-brand-navy dark:text-white tracking-tight">Cashaflux</span>
-          </Link>
+          <Logo />
 
           <nav className="hidden lg:flex items-center gap-8">
             {NAV_ITEMS.map((item) => (

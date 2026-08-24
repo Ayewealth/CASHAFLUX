@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { TrendingUp, TrendingDown, DollarSign, Receipt, Wallet, ArrowUpRight, ArrowDownRight, Users, Clock } from 'lucide-react'
+import { TrendingUp, DollarSign, Receipt, Wallet } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Badge } from '../../components/ui/badge'
 import { cn } from '../../lib/utils'
@@ -39,18 +39,19 @@ function Sparkline({ data, color }: { data: { value: number }[]; color: string }
 export default function DashboardPage() {
   const { data: summary, isLoading } = useDashboardSummary()
 
-  const chartData = summary?.cashFlow.income.map((inc) => {
-    const exp = summary.cashFlow.expenses.find((e) => e.month === inc.month)
-    return {
-      month: inc.month,
-      income: parseFloat(inc.total),
-      expenses: exp ? parseFloat(exp.total) : 0,
-    }
-  }) ?? []
+  // Pair income/expenses by index (both are now zero-filled 12-month arrays from server)
+  const chartData = summary?.cashFlow.income.map((inc, i) => ({
+    month: inc.month,
+    income: parseFloat(inc.total),
+    expenses: summary.cashFlow.expenses[i] ? parseFloat(summary.cashFlow.expenses[i].total) : 0,
+  })) ?? []
 
-  const mockSparklineData = Array.from({ length: 12 }, (_, i) => ({
-    value: 50 + Math.sin(i * 0.8) * 20 + Math.random() * 10,
-  }))
+  // Real sparkline data from actual cash flow
+  const sparklineIncome = summary?.cashFlow.income.map((i) => ({ value: parseFloat(i.total) })) ?? []
+  const sparklineExpenses = summary?.cashFlow.expenses.map((e) => ({ value: parseFloat(e.total) })) ?? []
+  const sparklineNet = summary?.cashFlow.income.map((inc, i) => ({
+    value: parseFloat(inc.total) - (summary.cashFlow.expenses[i] ? parseFloat(summary.cashFlow.expenses[i].total) : 0),
+  })) ?? []
 
   return (
     <div className="space-y-6">
@@ -66,7 +67,7 @@ export default function DashboardPage() {
           value={summary?.kpis.revenue ? formatCurrency(summary.kpis.revenue.value) : '$0'}
           change={summary?.kpis.revenue ? { value: `${summary.kpis.revenue.change >= 0 ? '+' : ''}${summary.kpis.revenue.change.toFixed(1)}%`, positive: summary.kpis.revenue.up } : undefined}
           accentColor="bg-brand-navy"
-          sparkline={<Sparkline data={mockSparklineData} color="#1E3A5F" />}
+          sparkline={<Sparkline data={sparklineIncome} color="#1E3A5F" />}
           loading={isLoading}
         />
         <KpiCard
@@ -75,7 +76,7 @@ export default function DashboardPage() {
           value={summary?.kpis.outstanding ? formatCurrency(summary.kpis.outstanding.value) : '$0'}
           change={summary?.kpis.outstanding ? { value: `${summary.kpis.outstanding.change >= 0 ? '+' : ''}${summary.kpis.outstanding.change.toFixed(1)}%`, positive: !summary.kpis.outstanding.up } : undefined}
           accentColor="bg-brand-blue"
-          sparkline={<Sparkline data={mockSparklineData.map((d) => ({ value: d.value * 0.6 }))} color="#2563EB" />}
+          sparkline={<Sparkline data={sparklineIncome} color="#2563EB" />}
           loading={isLoading}
         />
         <KpiCard
@@ -84,7 +85,7 @@ export default function DashboardPage() {
           value={summary?.kpis.expenses ? formatCurrency(summary.kpis.expenses.value) : '$0'}
           change={summary?.kpis.expenses ? { value: `${summary.kpis.expenses.change >= 0 ? '+' : ''}${summary.kpis.expenses.change.toFixed(1)}%`, positive: !summary.kpis.expenses.up } : undefined}
           accentColor="bg-warning"
-          sparkline={<Sparkline data={mockSparklineData.map((d) => ({ value: d.value * 0.4 }))} color="#D97706" />}
+          sparkline={<Sparkline data={sparklineExpenses} color="#D97706" />}
           loading={isLoading}
         />
         <KpiCard
@@ -93,7 +94,7 @@ export default function DashboardPage() {
           value={summary?.kpis.netCashFlow ? formatCurrency(summary.kpis.netCashFlow.value) : '$0'}
           change={summary?.kpis.netCashFlow ? { value: `${summary.kpis.netCashFlow.change >= 0 ? '+' : ''}${summary.kpis.netCashFlow.change.toFixed(1)}%`, positive: summary.kpis.netCashFlow.up } : undefined}
           accentColor="bg-success"
-          sparkline={<Sparkline data={mockSparklineData.map((d) => ({ value: d.value * 0.8 }))} color="#16A34A" />}
+          sparkline={<Sparkline data={sparklineNet} color="#16A34A" />}
           loading={isLoading}
         />
       </div>
@@ -140,41 +141,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-sm font-semibold text-text">Recent Invoices</CardTitle>
-            <Link to="/dashboard/invoices" className="text-xs text-brand-navy hover:underline">View all</Link>
-          </CardHeader>
-          <CardContent className="p-0">
-            {isLoading ? (
-              <div className="p-4 space-y-3">
-                {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-              </div>
-            ) : (
-              <div className="divide-y divide-border/40">
-                {(summary?.recentInvoices ?? []).length === 0 ? (
-                  <p className="px-4 py-6 text-sm text-text-muted text-center">No invoices yet</p>
-                ) : (
-                  summary?.recentInvoices.map((inv) => (
-                    <div key={inv.id} className="flex items-center justify-between px-4 py-3 hover:bg-brand-navy/[0.02] transition-colors">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-text truncate">{inv.clientName}</p>
-                        <p className="text-xs text-text-muted font-mono">{inv.invoiceNumber}</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium text-text font-mono tabular-nums">{formatCurrency(parseFloat(inv.amount))}</span>
-                        <Badge className={cn('text-[10px] px-1.5 py-0.5', STATUS_STYLES[inv.status])}>
-                          {inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
+        {/* Recent Expenses — moved to top-right slot */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-sm font-semibold text-text">Recent Expenses</CardTitle>
@@ -204,42 +171,43 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-semibold text-text">Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Link to="/dashboard/invoices/new" className="flex items-center gap-3 rounded-lg border border-border/50 bg-surface p-3 hover:bg-brand-navy/[0.02] hover:border-brand-navy/20 transition-all duration-200">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-navy/5">
-                <ArrowUpRight className="h-4 w-4 text-brand-navy" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-text">New Invoice</p>
-                <p className="text-xs text-text-muted">Create and send an invoice</p>
-              </div>
-            </Link>
-            <Link to="/dashboard/expenses/new" className="flex items-center gap-3 rounded-lg border border-border/50 bg-surface p-3 hover:bg-brand-navy/[0.02] hover:border-brand-navy/20 transition-all duration-200">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-warning/10">
-                <ArrowDownRight className="h-4 w-4 text-warning" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-text">Log Expense</p>
-                <p className="text-xs text-text-muted">Record a business expense</p>
-              </div>
-            </Link>
-            <Link to="/dashboard/clients" className="flex items-center gap-3 rounded-lg border border-border/50 bg-surface p-3 hover:bg-brand-navy/[0.02] hover:border-brand-navy/20 transition-all duration-200">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-success/10">
-                <Users className="h-4 h-4 text-success" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-text">Add Client</p>
-                <p className="text-xs text-text-muted">Add a new client to your roster</p>
-              </div>
-            </Link>
-          </CardContent>
-        </Card>
       </div>
+
+      {/* Recent Invoices — full width below */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-sm font-semibold text-text">Recent Invoices</CardTitle>
+          <Link to="/dashboard/invoices" className="text-xs text-brand-navy hover:underline">View all</Link>
+        </CardHeader>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="p-4 space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+            </div>
+          ) : (
+            <div className="divide-y divide-border/40">
+              {(summary?.recentInvoices ?? []).length === 0 ? (
+                <p className="px-4 py-6 text-sm text-text-muted text-center">No invoices yet</p>
+              ) : (
+                summary?.recentInvoices.map((inv) => (
+                  <div key={inv.id} className="flex items-center justify-between px-4 py-3 hover:bg-brand-navy/[0.02] transition-colors">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-text truncate">{inv.clientName}</p>
+                      <p className="text-xs text-text-muted font-mono">{inv.invoiceNumber}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-text font-mono tabular-nums">{formatCurrency(parseFloat(inv.amount))}</span>
+                      <Badge className={cn('text-[10px] px-1.5 py-0.5', STATUS_STYLES[inv.status])}>
+                        {inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}
+                      </Badge>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

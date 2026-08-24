@@ -4,6 +4,7 @@ import {
   LayoutDashboard, FileText, Wallet, Users, Landmark, BarChart3,
   Receipt, Briefcase, UserPlus, Settings, PanelLeftClose, PanelLeft, Navigation,
 } from 'lucide-react'
+import Logo from '../../components/shared/Logo'
 import { cn } from '../../lib/utils'
 
 interface SidebarProps {
@@ -121,20 +122,9 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         {/* Logo */}
         <div className={cn('flex h-14 items-center border-b border-white/10 shrink-0', collapsed ? 'justify-center' : 'px-4')}>
           {collapsed ? (
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-white">
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </div>
+            <Logo showWordmark={false} iconBg />
           ) : (
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-white">
-                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                </svg>
-              </div>
-              <span className="text-lg font-semibold tracking-tight">Cashaflux</span>
-            </div>
+            <Logo light iconBg />
           )}
         </div>
 
