@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router'
 import { authClient } from '../lib/auth-client'
 import { Button } from '../components/ui/button'
 import { AuthLayout } from '../components/AuthLayout'
+import { usePageMeta } from '@/lib/usePageMeta'
 
 export default function VerifyEmailPage() {
   const navigate = useNavigate()
@@ -13,6 +14,7 @@ export default function VerifyEmailPage() {
   const [checking, setChecking] = useState(false)
   const [resendSent, setResendSent] = useState(false)
   const [error, setError] = useState('')
+  usePageMeta({ title: 'Verify Email', description: 'Verify your email address to activate your Cashaflux account.' })
 
   const email = emailParam || session?.user?.email || ''
 

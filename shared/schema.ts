@@ -73,6 +73,10 @@ export const users = pgTable('users', {
   hashedPassword: text('hashed_password').notNull(),
   plan: planEnum('plan').default('free').notNull(),
   stripeCustomerId: text('stripe_customer_id'),
+  stripeSubscriptionId: text('stripe_subscription_id'),
+  subscriptionStatus: text('subscription_status').default('active').notNull(),
+  planInterval: text('plan_interval'),
+  currentPeriodEnd: timestamp('current_period_end'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
@@ -102,6 +106,7 @@ export const organizations = pgTable('organizations', {
   notificationPreferences: text('notification_preferences'),
   currency: text('currency').default('USD').notNull(),
   fiscalYearStart: integer('fiscal_year_start').default(1).notNull(),
+  demoMode: boolean('demo_mode').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
@@ -127,8 +132,12 @@ export const clients = pgTable('clients', {
   zip: text('zip'),
   currency: text('currency').default('USD').notNull(),
   archived: boolean('archived').default(false).notNull(),
+  demoSessionId: text('demo_session_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+}, (t) => ({
+  orgIdx: index('clients_org_idx').on(t.orgId),
+  demoIdx: index('clients_demo_idx').on(t.demoSessionId),
+}))
 
 export const invoices = pgTable('invoices', {
   id: text('id').primaryKey(),
@@ -148,7 +157,11 @@ export const invoices = pgTable('invoices', {
   createdBy: text('created_by').notNull().references(() => users.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+  demoSessionId: text('demo_session_id'),
+}, (t) => ({
+  orgIdx: index('invoices_org_idx').on(t.orgId),
+  demoIdx: index('invoices_demo_idx').on(t.demoSessionId),
+}))
 
 export const invoiceLineItems = pgTable('invoice_line_items', {
   id: text('id').primaryKey(),
@@ -158,6 +171,7 @@ export const invoiceLineItems = pgTable('invoice_line_items', {
   unitPrice: decimal('unit_price', { precision: 12, scale: 2 }).notNull(),
   taxRate: decimal('tax_rate', { precision: 5, scale: 2 }).default('0').notNull(),
   total: decimal('total', { precision: 12, scale: 2 }).notNull(),
+  demoSessionId: text('demo_session_id'),
 })
 
 export const expenses = pgTable('expenses', {
@@ -172,6 +186,7 @@ export const expenses = pgTable('expenses', {
   reconciled: boolean('reconciled').default(false).notNull(),
   createdBy: text('created_by').notNull().references(() => users.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  demoSessionId: text('demo_session_id'),
 })
 
 export const bankAccounts = pgTable('bank_accounts', {
@@ -182,9 +197,11 @@ export const bankAccounts = pgTable('bank_accounts', {
   type: bankAccountTypeEnum('type').default('checking').notNull(),
   currency: text('currency').default('USD').notNull(),
   currentBalance: decimal('current_balance', { precision: 14, scale: 2 }).default('0').notNull(),
+  demoSessionId: text('demo_session_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (t) => ({
   orgIdx: index('bank_accounts_org_idx').on(t.orgId),
+  demoIdx: index('bank_accounts_demo_idx').on(t.demoSessionId),
 }))
 
 export const bankTransactions = pgTable('bank_transactions', {
@@ -199,10 +216,12 @@ export const bankTransactions = pgTable('bank_transactions', {
   reconciled: boolean('reconciled').default(false).notNull(),
   matchedInvoiceId: text('matched_invoice_id').references(() => invoices.id),
   matchedExpenseId: text('matched_expense_id').references(() => expenses.id),
+  demoSessionId: text('demo_session_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (t) => ({
   orgAccountIdx: index('bank_transactions_org_account_idx').on(t.orgId, t.bankAccountId),
   accountReconciledIdx: index('bank_transactions_account_reconciled_idx').on(t.bankAccountId, t.reconciled),
+  demoIdx: index('bank_transactions_demo_idx').on(t.demoSessionId),
 }))
 
 export const recurringInvoices = pgTable('recurring_invoices', {
@@ -213,6 +232,7 @@ export const recurringInvoices = pgTable('recurring_invoices', {
   nextDate: timestamp('next_date').notNull(),
   endDate: timestamp('end_date'),
   active: boolean('active').default(true).notNull(),
+  demoSessionId: text('demo_session_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
@@ -239,6 +259,7 @@ export const mileageLogs = pgTable('mileage_logs', {
   destination: text('destination').notNull(),
   miles: decimal('miles', { precision: 8, scale: 1 }).notNull(),
   purpose: text('purpose'),
+  demoSessionId: text('demo_session_id'),
   createdBy: text('created_by').notNull().references(() => users.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
@@ -272,6 +293,7 @@ export const payrollEntries = pgTable('payroll_entries', {
   grossAmount: decimal('gross_amount', { precision: 12, scale: 2 }).notNull(),
   hours: decimal('hours', { precision: 6, scale: 1 }),
   status: text('status').default('draft').notNull(), // draft | paid
+  demoSessionId: text('demo_session_id'),
   createdBy: text('created_by').notNull().references(() => users.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
@@ -301,6 +323,15 @@ export const onboardingProgress = pgTable('onboarding_progress', {
   updatedAt: timestamp('updated_at').defaultNow().notNull().$onUpdate(() => new Date()),
 })
 
+export const demoSessions = pgTable('demo_sessions', {
+  id: text('id').primaryKey(),
+  orgId: text('org_id').notNull().references(() => organizations.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  cleanedUpAt: timestamp('cleaned_up_at'),
+}, (t) => ({
+  orgIdx: index('demo_sessions_org_idx').on(t.orgId),
+}))
+
 // ─── Zod Schemas ───
 
 export const insertUserSchema = createInsertSchema(users).omit({ createdAt: true })
@@ -323,6 +354,7 @@ export const insertContactSubmissionSchema = createInsertSchema(contactSubmissio
 export const insertActivityLogSchema = createInsertSchema(activityLog).omit({ createdAt: true })
 export const insertIndustrySchema = createInsertSchema(industries).omit({ createdAt: true })
 export const insertOnboardingProgressSchema = createInsertSchema(onboardingProgress).omit({ createdAt: true, updatedAt: true })
+export const insertDemoSessionSchema = createInsertSchema(demoSessions).omit({ createdAt: true, cleanedUpAt: true })
 
 // ─── Inferred Types ───
 
@@ -366,3 +398,5 @@ export type PayrollEntry = typeof payrollEntries.$inferSelect
 export type InsertPayrollEntry = z.infer<typeof insertPayrollEntrySchema>
 export type OnboardingProgress = typeof onboardingProgress.$inferSelect
 export type InsertOnboardingProgress = z.infer<typeof insertOnboardingProgressSchema>
+export type DemoSession = typeof demoSessions.$inferSelect
+export type InsertDemoSession = z.infer<typeof insertDemoSessionSchema>

@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router'
 import { useNavigate } from 'react-router'
 import { authClient } from '../lib/auth-client'
+import { useAuthRedirect } from '../lib/useAuthRedirect'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Lock, Eye, EyeOff } from 'lucide-react'
 import { AuthLayout } from '../components/AuthLayout'
+import { usePageMeta } from '@/lib/usePageMeta'
 
 interface PasswordStrength {
   score: number
@@ -37,6 +39,7 @@ function getPasswordStrength(password: string): PasswordStrength {
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate()
+  const { isPending, hasSession } = useAuthRedirect()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
@@ -45,6 +48,7 @@ export default function ResetPasswordPage() {
   const [tokenError, setTokenError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  usePageMeta({ title: 'Reset Password', description: 'Set a new password for your Cashaflux account.' })
 
   useEffect(() => {
     const paramToken = new URLSearchParams(window.location.search).get('token')
@@ -56,6 +60,16 @@ export default function ResetPasswordPage() {
   }, [])
 
   const strength = getPasswordStrength(password)
+
+  if (isPending) {
+    return (
+      <div className="min-h-[100dvh] flex bg-bg items-center justify-center">
+        <div className="animate-pulse text-text-muted">Loading...</div>
+      </div>
+    )
+  }
+
+  if (hasSession) return null
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

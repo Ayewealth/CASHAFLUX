@@ -1,16 +1,19 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router'
-import { Save, Upload, Eye, EyeOff, X } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate, useSearchParams } from 'react-router'
+import { Save, Upload, Eye, EyeOff, X, CheckCircle2, ChevronRight, ArrowUpRight, CreditCard, Clock, Shield, Sparkles, Circle, AlertCircle, FlaskConical } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '../../components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Skeleton } from '../../components/ui/skeleton'
 import { ThemeToggle } from '../../components/dashboard/ThemeToggle'
+import { useDemoStatus, useToggleDemo } from '../../features/demo/hooks'
 import { useSettings, useUpdateSettings } from '../../features/settings/hooks'
+import { useSubscriptionStatus, usePlans, useCreateCheckout, useBillingPortal, useInvoiceHistory } from '../../features/subscription/hooks'
 import { toast } from '../../components/ui/toast'
 import { cn } from '../../lib/utils'
 import { authClient } from '../../lib/auth-client'
+import SettingsSidebar from '../../components/dashboard/SettingsSidebar'
 
 const TABS = [
   { id: 'business', label: 'Business Profile' },
@@ -19,6 +22,7 @@ const TABS = [
   { id: 'billing', label: 'Subscription & Billing' },
   { id: 'security', label: 'Security' },
   { id: 'data', label: 'Data & Privacy' },
+  { id: 'demo', label: 'Demo Mode' },
   { id: 'display', label: 'Display' },
 ]
 
@@ -36,10 +40,24 @@ const INDUSTRIES = [
 
 export default function SettingsPage() {
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<TabId>('business')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tabParam = searchParams.get('tab')
+  const [activeTab, setActiveTab] = useState<TabId>((tabParam as TabId) || 'business')
   const { data: settings, isLoading } = useSettings()
   const updateSettings = useUpdateSettings()
   const session = authClient.useSession()
+  const { data: subscription, isLoading: subLoading } = useSubscriptionStatus()
+  const { data: plans } = usePlans()
+  const { data: invoices, isLoading: invoicesLoading } = useInvoiceHistory()
+  const checkoutMutation = useCreateCheckout()
+  const portalMutation = useBillingPortal()
+  const [billingInterval, setBillingInterval] = useState<'monthly' | 'annual'>('monthly')
+  const [checkoutPending, setCheckoutPending] = useState(false)
+
+  // Handle tab from URL
+  useEffect(() => {
+    if (tabParam && tabParam !== activeTab) setActiveTab(tabParam as TabId)
+  }, [tabParam])
 
   // Business profile
   const [name, setName] = useState('')
@@ -74,6 +92,8 @@ export default function SettingsPage() {
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
+  const { data: demoStatus } = useDemoStatus()
+  const toggleDemo = useToggleDemo()
 
   function loadSettings() {
     if (!settings) return
@@ -206,14 +226,20 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div><h1 className="text-2xl font-bold text-text tracking-tight">Settings</h1><p className="text-sm text-muted-foreground mt-1">Manage your account and preferences</p></div>
 
-      <div className="flex flex-wrap gap-1 border-b border-border">
-        {TABS.map((tab) => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className={cn('px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px', activeTab === tab.id ? 'border-accent text-accent' : 'border-transparent text-muted-foreground hover:text-text')}>
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <div className="flex gap-8">
+        <SettingsSidebar activeTab={activeTab} onTabChange={(id) => { setActiveTab(id as TabId); setSearchParams({ tab: id }) }} className="hidden lg:block" />
+
+        {/* Mobile tab pills */}
+        <div className="flex lg:hidden gap-1 overflow-x-auto pb-2 w-full">
+          {TABS.map((tab) => (
+            <button key={tab.id} onClick={() => { setActiveTab(tab.id); setSearchParams({ tab: tab.id }) }}
+              className={cn('shrink-0 px-4 py-2 text-sm font-medium rounded-lg transition-colors', activeTab === tab.id ? 'bg-brand-navy/5 text-brand-navy' : 'text-muted-foreground hover:text-text')}>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex-1 min-w-0">
 
       {isLoading ? <Skeleton className="h-64 w-full" /> : (
         <>
@@ -331,18 +357,343 @@ export default function SettingsPage() {
 
           {/* Subscription & Billing */}
           {activeTab === 'billing' && (
-            <Card>
-              <CardHeader><CardTitle className="text-sm font-semibold text-text">Subscription & Billing</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-surface">
-                  <div><p className="text-sm font-medium text-text">Current Plan</p><p className="text-xs text-muted-foreground mt-0.5">You are on the <strong className="capitalize">{((session.data?.user as any)?.plan) ?? 'Free'}</strong> plan</p></div>
-                  <Button variant="outline" size="sm" onClick={() => navigate('/pricing')}>View Plans</Button>
+            <div className="space-y-8">
+              {checkoutPending ? (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-16 gap-4">
+                    <div className="relative">
+                      <div className="w-12 h-12 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
+                      <Sparkles className="w-5 h-5 text-accent absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                    </div>
+                    <p className="text-base font-medium text-text">Confirming your subscription...</p>
+                    <p className="text-sm text-muted-foreground">You&apos;ll be redirected in just a moment.</p>
+                  </CardContent>
+                </Card>
+              ) : subLoading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-48 w-full rounded-2xl" />
+                  <Skeleton className="h-64 w-full rounded-2xl" />
+                  <Skeleton className="h-40 w-full rounded-2xl" />
                 </div>
-                <div className="p-4 rounded-xl border border-border bg-surface">
-                  <p className="text-sm text-muted-foreground">Manage your subscription, payment method, and invoices in the Stripe Customer Portal.</p>
-                </div>
-              </CardContent>
-            </Card>
+              ) : subscription ? (
+                <>
+                  {/* Current Plan Hero Card */}
+                  <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-surface to-surface/80 p-6 sm:p-8">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-brand-navy/[0.03] rounded-full translate-y-1/2 -translate-x-1/2" />
+                    <div className="relative">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-3">
+                            <h2 className="text-lg sm:text-xl font-bold text-text">
+                              {subscription.plan === 'free' ? 'Free' : subscription.plan === 'pro' ? 'Pro' : 'Business'}
+                            </h2>
+                            <span className={cn(
+                              'inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-semibold rounded-full',
+                              subscription.status === 'active' && 'text-success bg-success/10',
+                              subscription.status === 'past_due' && 'text-warning bg-warning/10',
+                              subscription.status === 'canceled' && 'text-danger bg-danger/10',
+                              subscription.plan === 'free' && 'text-muted-foreground bg-muted/50',
+                            )}>
+                              {subscription.status === 'active' && <CheckCircle2 className="w-3 h-3" />}
+                              {subscription.status === 'past_due' && <AlertCircle className="w-3 h-3" />}
+                              {subscription.status === 'canceled' && <X className="w-3 h-3" />}
+                              {subscription.plan === 'free' ? 'Free Plan' : subscription.status}
+                            </span>
+                          </div>
+                          <div className="flex items-baseline gap-1.5 mt-2">
+                            <span className="text-3xl sm:text-4xl font-bold text-text tracking-tight">
+                              {subscription.plan === 'free' ? '$0' : subscription.plan === 'pro' ? (subscription.interval === 'year' ? '$180' : '$19') : (subscription.interval === 'year' ? '$360' : '$39')}
+                            </span>
+                            {subscription.plan !== 'free' && (
+                              <span className="text-sm text-muted-foreground">/{subscription.interval === 'year' ? 'yr' : 'mo'}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {subscription.plan !== 'free' && (
+                            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => portalMutation.mutate()} disabled={portalMutation.isPending}>
+                              <CreditCard className="w-3.5 h-3.5" />
+                              Manage Billing
+                            </Button>
+                          )}
+                          {(subscription.plan === 'free' || subscription.plan === 'pro') && (
+                            <Button size="sm" className="gap-1.5 shadow-sm" onClick={() => {
+                              const targetPlan = subscription.plan === 'free' ? 'pro' : 'business'
+                              checkoutMutation.mutate({
+                                plan: targetPlan,
+                                interval: billingInterval,
+                                successUrl: `${window.location.origin}/dashboard/settings?tab=billing`,
+                              })
+                            }}>
+                              <Sparkles className="w-3.5 h-3.5" />
+                              {subscription.plan === 'free' ? 'Upgrade to Pro' : 'Upgrade to Business'}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      {subscription.currentPeriodEnd && subscription.plan !== 'free' && (
+                        <div className="flex items-center gap-2 mt-4 text-sm text-muted-foreground bg-muted/30 rounded-xl px-4 py-3 border border-border/50">
+                          <Clock className="w-4 h-4 shrink-0" />
+                          <span>
+                            {subscription.status === 'active' ? 'Renews' : 'Expired'}{' '}
+                            {new Date(subscription.currentPeriodEnd * 1000).toLocaleDateString('en-US', {
+                              year: 'numeric', month: 'long', day: 'numeric',
+                            })}
+                            {' '}({Math.ceil((subscription.currentPeriodEnd * 1000 - Date.now()) / (1000 * 60 * 60 * 24))} days)
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* What's Included */}
+                  {subscription.plan !== 'free' && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-sm font-semibold text-text flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-success" />
+                          What&apos;s Included in {subscription.plan === 'pro' ? 'Pro' : 'Business'}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {[
+                            'Unlimited clients',
+                            'Bank sync & reconciliation',
+                            'Recurring invoices',
+                            'Advanced financial reports',
+                            'Tax-ready exports',
+                            'Priority email support',
+                            ...(subscription.plan === 'business' ? [
+                              'Team members (up to 5)',
+                              'Payroll-ready exports',
+                              'Dedicated account manager',
+                              'Priority phone support',
+                            ] : []),
+                          ].map((feature) => (
+                            <div key={feature} className="flex items-center gap-2.5 p-3 rounded-xl bg-muted/30 border border-border/50">
+                              <div className="flex-shrink-0 w-5 h-5 rounded-full bg-accent/10 flex items-center justify-center">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-accent" />
+                              </div>
+                              <span className="text-sm text-text">{feature}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Plan Comparison */}
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                      <CardTitle className="text-sm font-semibold text-text">Compare Plans</CardTitle>
+                      <div className="flex gap-1 bg-muted/50 p-0.5 rounded-lg border border-border/50">
+                        <button
+                          onClick={() => setBillingInterval('monthly')}
+                          className={cn('px-3.5 py-1.5 text-xs font-medium rounded-md transition-all', billingInterval === 'monthly' ? 'bg-accent text-white shadow-sm' : 'text-muted-foreground hover:text-text')}
+                        >
+                          Monthly
+                        </button>
+                        <button
+                          onClick={() => setBillingInterval('annual')}
+                          className={cn('px-3.5 py-1.5 text-xs font-medium rounded-md transition-all', billingInterval === 'annual' ? 'bg-accent text-white shadow-sm' : 'text-muted-foreground hover:text-text')}
+                        >
+                          Annual <span className="text-[10px] opacity-80">Save 20%</span>
+                        </button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {[
+                          {
+                            id: 'free', name: 'Free', price: 0,
+                            features: ['Up to 5 clients', 'Core invoicing', 'Expense tracking', 'Basic reports', 'Mileage tracking'],
+                            popular: false,
+                          },
+                          {
+                            id: 'pro', name: 'Pro',
+                            monthlyPrice: 19, annualPrice: 180,
+                            features: ['Unlimited clients', 'Bank sync & reconciliation', 'Recurring invoices', 'Advanced reports', 'Priority email support'],
+                            popular: true,
+                          },
+                          {
+                            id: 'business', name: 'Business',
+                            monthlyPrice: 39, annualPrice: 360,
+                            features: ['Everything in Pro', 'Team members (up to 5)', 'Payroll-ready exports', 'Dedicated account manager', 'Priority phone support'],
+                            popular: false,
+                          },
+                        ].map((plan) => {
+                          const isCurrent = subscription.plan === plan.id
+                          const price = 'monthlyPrice' in plan
+                            ? (billingInterval === 'annual' ? plan.annualPrice : plan.monthlyPrice)
+                            : plan.price
+                          return (
+                            <div
+                              key={plan.id}
+                              className={cn(
+                                'relative flex flex-col rounded-xl border-2 p-5 transition-all',
+                                isCurrent ? 'border-accent bg-accent/[0.03] shadow-sm' : 'border-border bg-surface hover:border-accent/30',
+                              )}
+                            >
+                              {plan.popular && !isCurrent && (
+                                <span className="absolute -top-2.5 left-4 inline-flex px-2.5 py-0.5 text-[10px] font-semibold text-white bg-accent rounded-full">Most popular</span>
+                              )}
+                              {isCurrent && (
+                                <span className="absolute -top-2.5 right-4 inline-flex px-2.5 py-0.5 text-[10px] font-semibold text-white bg-success rounded-full">Current</span>
+                              )}
+                              <div className="mb-3">
+                                <h3 className="text-base font-bold text-text">{plan.name}</h3>
+                              </div>
+                              <div className="flex items-baseline gap-1 mb-4">
+                                <span className="text-2xl font-bold text-text tracking-tight">
+                                  {'monthlyPrice' in plan
+                                    ? (billingInterval === 'annual'
+                                      ? `$${plan.annualPrice}`
+                                      : `$${plan.monthlyPrice}`)
+                                    : '$0'}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {'monthlyPrice' in plan ? (billingInterval === 'annual' ? '/yr' : '/mo') : ''}
+                                </span>
+                              </div>
+                              {'monthlyPrice' in plan && billingInterval === 'annual' && (
+                                <p className="text-[11px] text-success font-medium mb-3">
+                                  ${plan.monthlyPrice}/mo when paid monthly
+                                </p>
+                              )}
+                              <ul className="space-y-2 mb-5 flex-1">
+                                {plan.features.map((f) => (
+                                  <li key={f} className="text-xs text-muted-foreground flex items-start gap-2">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0 mt-0.5" />
+                                    {f}
+                                  </li>
+                                ))}
+                              </ul>
+                              {!isCurrent && plan.id !== 'free' && (
+                                <Button
+                                  size="sm"
+                                  variant={subscription.plan === 'free' ? 'default' : 'outline'}
+                                  className={cn('gap-1.5 w-full', subscription.plan === 'free' && 'shadow-sm')}
+                                  onClick={() => {
+                                    checkoutMutation.mutate({
+                                      plan: plan.id,
+                                      interval: billingInterval,
+                                      successUrl: `${window.location.origin}/dashboard/settings?tab=billing`,
+                                    })
+                                  }}
+                                  disabled={checkoutMutation.isPending}
+                                >
+                                  {plan.id === 'pro' ? 'Upgrade to Pro' : 'Upgrade to Business'}
+                                  <ArrowUpRight className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
+                              {isCurrent && (
+                                <Button variant="outline" size="sm" className="w-full gap-1.5" disabled>
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-success" />
+                                  Current Plan
+                                </Button>
+                              )}
+                              {plan.id === 'free' && !isCurrent && subscription.plan !== 'free' && (
+                                <Button variant="outline" size="sm" className="w-full" disabled>
+                                  Downgrade in Stripe Portal
+                                </Button>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Invoice History */}
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                      <CardTitle className="text-sm font-semibold text-text flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 text-muted-foreground" />
+                        Invoice History
+                      </CardTitle>
+                      {subscription.customerId && (
+                        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => portalMutation.mutate()} disabled={portalMutation.isPending}>
+                          View All in Stripe
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </CardHeader>
+                    <CardContent>
+                      {invoicesLoading ? (
+                        <div className="space-y-3">
+                          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
+                        </div>
+                      ) : invoices && invoices.length > 0 ? (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b border-border">
+                                <th className="text-left py-3 px-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Invoice</th>
+                                <th className="text-left py-3 px-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</th>
+                                <th className="text-right py-3 px-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Amount</th>
+                                <th className="text-right py-3 px-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                                <th className="text-right py-3 px-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Receipt</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {invoices.slice(0, 10).map((inv) => (
+                                <tr key={inv.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                                  <td className="py-3 px-2">
+                                    <span className="text-text font-medium">{inv.number || '—'}</span>
+                                  </td>
+                                  <td className="py-3 px-2 text-muted-foreground">
+                                    {new Date(inv.created * 1000).toLocaleDateString('en-US', {
+                                      year: 'numeric', month: 'short', day: 'numeric',
+                                    })}
+                                  </td>
+                                  <td className="py-3 px-2 text-right text-text font-medium">
+                                    ${(inv.amountPaid / 100).toFixed(2)}
+                                  </td>
+                                  <td className="py-3 px-2 text-right">
+                                    <span className={cn(
+                                      'inline-flex px-2 py-0.5 text-[11px] font-medium rounded-full',
+                                      inv.status === 'paid' && 'text-success bg-success/10',
+                                      inv.status === 'open' && 'text-warning bg-warning/10',
+                                      inv.status === 'void' && 'text-muted-foreground bg-muted/50',
+                                      inv.status === 'uncollectible' && 'text-danger bg-danger/10',
+                                    )}>
+                                      {inv.status === 'paid' ? 'Paid' : inv.status}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 px-2 text-right">
+                                    {inv.pdf ? (
+                                      <a href={inv.pdf} target="_blank" rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-xs text-accent hover:text-accent/80 transition-colors font-medium">
+                                        PDF
+                                        <ArrowUpRight className="w-3 h-3" />
+                                      </a>
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground">—</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-8 text-center">
+                          <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mb-3">
+                            <CreditCard className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                          <p className="text-sm text-muted-foreground">No invoices yet</p>
+                          {subscription.plan === 'free' && (
+                            <p className="text-xs text-muted-foreground mt-1">Invoices will appear once you upgrade to a paid plan.</p>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </>
+              ) : null}
+            </div>
           )}
 
           {/* Security */}
@@ -379,6 +730,75 @@ export default function SettingsPage() {
             </Card>
           )}
 
+          {/* Demo Mode */}
+          {activeTab === 'demo' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-semibold text-text flex items-center gap-2">
+                  <FlaskConical className="w-4 h-4 text-text-muted" />
+                  Demo Mode
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {(toggleDemo.isPending || toggleDemo.isSuccess) && !demoStatus ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="w-8 h-8 rounded-full border-2 border-brand-navy/30 border-t-brand-navy animate-spin" />
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-surface">
+                      <div>
+                        <p className="text-sm font-medium text-text">Populate with demo data</p>
+                        <p className="text-xs text-text-muted mt-0.5 max-w-md">
+                          {demoStatus?.demoMode
+                            ? 'Remove demo data and restore your real business data.'
+                            : 'Generate 12 months of realistic, profitable sample data — including invoices, expenses, bank transactions, and more.'}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={demoStatus?.demoMode ?? false}
+                        onClick={() => toggleDemo.mutate(!demoStatus?.demoMode)}
+                        disabled={toggleDemo.isPending}
+                        className={cn(
+                          'relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50',
+                          demoStatus?.demoMode ? 'bg-brand-navy' : 'bg-muted'
+                        )}
+                      >
+                        <span className={cn('inline-block h-4 w-4 rounded-full bg-white shadow transform ring-0 transition duration-200', demoStatus?.demoMode ? 'translate-x-4' : 'translate-x-0.5')} />
+                      </button>
+                    </div>
+
+                    {demoStatus?.demoMode && (
+                      <div className="rounded-xl border border-warning/20 bg-warning/5 p-4">
+                        <p className="text-xs text-warning font-medium">Demo data is active</p>
+                        <p className="text-xs text-text-muted mt-1">
+                          You are currently viewing demo data. Toggle Demo Mode off to restore your real data. Your actual data is preserved and safe.
+                        </p>
+                      </div>
+                    )}
+
+                    {!demoStatus?.demoMode && (
+                      <div className="rounded-xl border border-border/50 p-4">
+                        <p className="text-xs text-text-muted leading-relaxed">
+                          Demo Mode populates your organization with realistic sample data — 12 months of invoices, expenses, bank transactions, mileage logs, and payroll entries. Use it to explore Cashaflux features with pre-filled data. Your actual data remains untouched and will be restored when you toggle Demo Mode off.
+                        </p>
+                      </div>
+                    )}
+
+                    {toggleDemo.isPending && (
+                      <div className="flex items-center gap-2 text-sm text-text-muted">
+                        <div className="w-4 h-4 rounded-full border-2 border-brand-navy/30 border-t-brand-navy animate-spin" />
+                        {demoStatus?.demoMode ? 'Cleaning up demo data...' : 'Generating demo data...'}
+                      </div>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Display */}
           {activeTab === 'display' && (
             <Card>
@@ -393,6 +813,8 @@ export default function SettingsPage() {
           )}
         </>
       )}
+      </div>
+    </div>
     </div>
   )
 }

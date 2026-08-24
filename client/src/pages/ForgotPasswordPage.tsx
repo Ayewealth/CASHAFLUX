@@ -2,18 +2,32 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { useNavigate } from 'react-router'
 import { authClient } from '../lib/auth-client'
+import { useAuthRedirect } from '../lib/useAuthRedirect'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Lock } from 'lucide-react'
 import { AuthLayout } from '../components/AuthLayout'
+import { usePageMeta } from '@/lib/usePageMeta'
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate()
+  const { isPending, hasSession } = useAuthRedirect()
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
+
+  usePageMeta({ title: 'Forgot Password', description: 'Reset your Cashaflux account password. We will send a secure reset link to your email.' })
+  if (isPending) {
+    return (
+      <div className="min-h-[100dvh] flex bg-bg items-center justify-center">
+        <div className="animate-pulse text-text-muted">Loading...</div>
+      </div>
+    )
+  }
+
+  if (hasSession) return null
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

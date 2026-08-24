@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router'
 import { authClient } from '../../lib/auth-client'
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
 import {
-  Plus, Search, Bell, FileText, Wallet, UserPlus, LogOut, User, Settings, ChevronRight, Menu,
+  Plus, Search, Bell, FileText, Wallet, UserPlus, LogOut, User, Settings, ChevronRight, Menu, Command,
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
@@ -33,7 +33,6 @@ function Breadcrumbs() {
 
   const crumbs: { label: string; path: string }[] = []
   let path = ''
-  // Skip 'dashboard' segment for breadcrumbs, it's the root
   for (const segment of segments.slice(1)) {
     path += `/${segment}`
     const label = BREADCRUMB_LABELS[segment] || segment.charAt(0).toUpperCase() + segment.slice(1)
@@ -69,7 +68,7 @@ function QuickActions() {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-accent text-white text-sm font-medium hover:bg-accent/90 transition-colors">
+      <PopoverTrigger className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-brand-navy text-white text-sm font-medium hover:bg-brand-navy-light transition-colors">
         <Plus className="h-4 w-4" />
         <span className="hidden sm:inline">Quick Actions</span>
       </PopoverTrigger>
@@ -107,7 +106,7 @@ function UserMenu() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger className="flex items-center gap-2 rounded-lg p-1.5 hover:bg-muted transition-colors">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-semibold text-white">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-navy text-xs font-semibold text-white">
           {initials}
         </div>
         <span className="hidden md:block text-sm font-medium text-text max-w-[120px] truncate">
@@ -140,7 +139,7 @@ function UserMenu() {
 
 export default function Topbar({ mobileOpen, onMobileToggle }: TopbarProps) {
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border bg-surface px-4 lg:px-6">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border/50 bg-surface/80 backdrop-blur-xl shadow-sm px-4 lg:px-6">
       <button
         onClick={onMobileToggle}
         className="lg:hidden flex items-center justify-center h-9 w-9 rounded-lg hover:bg-muted transition-colors text-text-muted"
@@ -156,8 +155,11 @@ export default function Topbar({ mobileOpen, onMobileToggle }: TopbarProps) {
         <input
           type="search"
           placeholder="Search..."
-          className="h-9 w-56 rounded-lg border border-input bg-transparent pl-9 pr-3 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 transition-colors"
+          className="h-9 w-56 rounded-lg border border-input bg-transparent pl-9 pr-8 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-navy/20 transition-colors"
         />
+        <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 rounded border border-border bg-surface px-1.5 py-0.5 text-[10px] font-medium text-text-muted pointer-events-none">
+          <Command className="w-2.5 h-2.5" />K
+        </kbd>
       </div>
 
       <QuickActions />

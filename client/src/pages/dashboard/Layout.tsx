@@ -2,6 +2,7 @@ import { useState, useEffect, createContext, useContext } from 'react'
 import { Outlet } from 'react-router'
 import Sidebar from '../../components/dashboard/Sidebar'
 import Topbar from '../../components/dashboard/Topbar'
+import { usePageMeta } from '@/lib/usePageMeta'
 
 interface ThemeContextType {
   dark: boolean
@@ -26,6 +27,7 @@ export default function Layout() {
     return document.documentElement.getAttribute('data-mode') === 'dark'
   })
 
+  usePageMeta({ title: 'Dashboard' })
   useEffect(() => {
     document.documentElement.setAttribute('data-mode', dark ? 'dark' : 'light')
   }, [dark])

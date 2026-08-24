@@ -12,6 +12,7 @@ export const router = createBrowserRouter([
   { path: '/features', lazy: () => import('../pages/FeaturesPage').then((m) => ({ Component: m.default })) },
   { path: '/blog', lazy: () => import('../pages/BlogIndexPage').then((m) => ({ Component: m.default })) },
   { path: '/blog/:slug', lazy: () => import('../pages/BlogPostPage').then((m) => ({ Component: m.default })) },
+  { path: '/how-it-works', lazy: () => import('../pages/HowItWorksPage').then((m) => ({ Component: m.default })) },
   { path: '/about', lazy: () => import('../pages/AboutPage').then((m) => ({ Component: m.default })) },
   { path: '/contact', lazy: () => import('../pages/ContactPage').then((m) => ({ Component: m.default })) },
   { path: '/privacy', lazy: () => import('../pages/PrivacyPage').then((m) => ({ Component: m.default })) },

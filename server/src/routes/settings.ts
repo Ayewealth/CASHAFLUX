@@ -5,6 +5,8 @@ import { db } from '../db/client'
 import { clients, invoices, expenses, bankAccounts, bankTransactions, mileageLogs, payrollEntries, users, organizations, orgMembers } from '@shared/schema'
 import { eq } from 'drizzle-orm'
 import { getUserOrg } from '../lib/org'
+import { encrypt, decrypt, isEncrypted } from '../lib/encryption'
+import { sanitizeObject } from '../lib/sanitize'
 
 const router = Router()
 router.use(requireAuth)
@@ -15,6 +17,9 @@ router.get('/', async (req, res) => {
     if (!userOrg) { res.status(404).json({ error: 'No organization found' }); return }
     const org = await db.query.organizations.findFirst({ where: (o, { eq }) => eq(o.id, userOrg.orgId) })
     if (!org) { res.status(404).json({ error: 'Organization not found' }); return }
+    if (org.ein && isEncrypted(org.ein)) {
+      org.ein = decrypt(org.ein)
+    }
     res.json(org)
   } catch { res.status(500).json({ error: 'Failed to fetch settings' }) }
 })
@@ -28,8 +33,18 @@ router.put('/', async (req, res) => {
     for (const key of allowed) {
       if (req.body[key] !== undefined) data[key] = req.body[key]
     }
+    if (data.ein) {
+      data.ein = encrypt(data.ein as string)
+    }
+    if (typeof data.name === 'string') {
+      const sanitized = sanitizeObject(data, ['name', 'type', 'addressLine1', 'addressLine2', 'city', 'state', 'zip', 'phone', 'website'])
+      Object.assign(data, sanitized)
+    }
     await db.update(organizations).set(data).where(eq(organizations.id, userOrg.orgId))
     const updated = await db.query.organizations.findFirst({ where: (o, { eq }) => eq(o.id, userOrg.orgId) })
+    if (updated?.ein && isEncrypted(updated.ein)) {
+      updated.ein = decrypt(updated.ein)
+    }
     res.json(updated)
   } catch { res.status(500).json({ error: 'Failed to update settings' }) }
 })

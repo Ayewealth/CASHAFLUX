@@ -20,18 +20,41 @@ interface NavItem {
   badge?: string
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/dashboard/invoices', label: 'Invoices', icon: FileText },
-  { path: '/dashboard/expenses', label: 'Expenses', icon: Wallet },
-  { path: '/dashboard/mileage', label: 'Mileage', icon: Navigation },
-  { path: '/dashboard/clients', label: 'Clients', icon: Users },
-  { path: '/dashboard/bank', label: 'Bank', icon: Landmark },
-  { path: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
-  { path: '/dashboard/tax', label: 'Tax Centre', icon: Receipt },
-  { path: '/dashboard/payroll', label: 'Payroll', icon: Briefcase },
-  { path: '/dashboard/team', label: 'Team', icon: UserPlus },
-  { path: '/dashboard/settings', label: 'Settings', icon: Settings },
+interface NavGroup {
+  label: string
+  items: NavItem[]
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: 'Overview',
+    items: [{ path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }],
+  },
+  {
+    label: 'Business',
+    items: [
+      { path: '/dashboard/invoices', label: 'Invoices', icon: FileText },
+      { path: '/dashboard/expenses', label: 'Expenses', icon: Wallet },
+      { path: '/dashboard/mileage', label: 'Mileage', icon: Navigation },
+      { path: '/dashboard/clients', label: 'Clients', icon: Users },
+    ],
+  },
+  {
+    label: 'Finances',
+    items: [
+      { path: '/dashboard/bank', label: 'Bank', icon: Landmark },
+      { path: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
+      { path: '/dashboard/tax', label: 'Tax Centre', icon: Receipt },
+      { path: '/dashboard/payroll', label: 'Payroll', icon: Briefcase },
+    ],
+  },
+  {
+    label: 'Account',
+    items: [
+      { path: '/dashboard/team', label: 'Team', icon: UserPlus },
+      { path: '/dashboard/settings', label: 'Settings', icon: Settings },
+    ],
+  },
 ]
 
 function NavLink({ item, collapsed, onHover, onLeave }: { item: NavItem; collapsed: boolean; onHover: (label: string) => void; onLeave: () => void }) {
@@ -54,12 +77,12 @@ function NavLink({ item, collapsed, onHover, onLeave }: { item: NavItem; collaps
         'group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
         collapsed ? 'justify-center mx-2' : 'mx-3',
         isActive
-          ? 'bg-white/10 text-white'
+          ? 'bg-white/15 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]'
           : 'text-white/60 hover:bg-white/5 hover:text-white/90',
       )}
     >
       {isActive && (
-        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-full bg-brand-blue" />
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-full bg-brand-blue shadow-[0_0_6px_rgba(37,99,235,0.5)]" />
       )}
       <item.icon className={cn('h-5 w-5 shrink-0', collapsed ? 'h-5 w-5' : 'h-4.5 w-4.5')} />
       {!collapsed && <span className="truncate">{item.label}</span>}
@@ -90,7 +113,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
 
       <aside
         className={cn(
-          'fixed lg:static inset-y-0 left-0 z-50 flex flex-col bg-brand-navy text-white transition-all duration-300 ease-in-out',
+          'fixed lg:static inset-y-0 left-0 z-50 flex flex-col bg-gradient-to-b from-brand-navy to-brand-navy-dark text-white transition-all duration-300 ease-in-out border-r border-white/5',
           mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
           collapsed ? 'w-16' : 'w-64',
         )}
@@ -116,9 +139,20 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4 space-y-1">
-          {NAV_ITEMS.map((item) => (
-            <NavLink key={item.path} item={item} collapsed={collapsed} onHover={handleHover} onLeave={handleLeave} />
+        <nav className="flex-1 overflow-y-auto py-4 space-y-6">
+          {NAV_GROUPS.map((group) => (
+            <div key={group.label}>
+              {!collapsed && (
+                <p className="px-5 mb-1 text-[10px] font-mono font-medium uppercase tracking-widest text-white/30">
+                  {group.label}
+                </p>
+              )}
+              <div className="space-y-1">
+                {group.items.map((item) => (
+                  <NavLink key={item.path} item={item} collapsed={collapsed} onHover={handleHover} onLeave={handleLeave} />
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
 
@@ -140,7 +174,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         {/* Tooltip for collapsed nav items */}
         {collapsed && hoveredLabel && (
           <div className="fixed left-[4.5rem] top-1/2 -translate-y-1/2 z-[60] pointer-events-none">
-            <div className="rounded-md bg-[#1E3A5F] px-3 py-1.5 text-xs font-medium text-white shadow-lg ring-1 ring-white/10 whitespace-nowrap">
+            <div className="rounded-md bg-brand-navy/90 backdrop-blur px-3 py-1.5 text-xs font-medium text-white shadow-lg ring-1 ring-white/10 whitespace-nowrap">
               {hoveredLabel}
             </div>
           </div>

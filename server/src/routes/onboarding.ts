@@ -4,6 +4,8 @@ import { db } from '../db/client'
 import { organizations, orgMembers, onboardingProgress } from '@shared/schema'
 import { eq } from 'drizzle-orm'
 import { getUserOrg } from '../lib/org'
+import { encrypt } from '../lib/encryption'
+import { sanitizeObject } from '../lib/sanitize'
 
 const router = Router()
 
@@ -92,9 +94,7 @@ router.post('/', async (req, res) => {
     phone, website, ein, logoR2Key, plan
   } = req.body
   try {
-    const [org] = await db.insert(organizations).values({
-      id: crypto.randomUUID(),
-      ownerUserId: req.user!.id,
+    const sanitized = sanitizeObject({
       name: businessName || 'My Business',
       type: businessType || 'sole_proprietor',
       industry: industry || null,
@@ -105,7 +105,13 @@ router.post('/', async (req, res) => {
       zip: zip || null,
       phone: phone || null,
       website: website || null,
-      ein: ein || null,
+    }, ['name', 'type', 'industry', 'addressLine1', 'addressLine2', 'city', 'state', 'zip', 'phone', 'website'])
+
+    const [org] = await db.insert(organizations).values({
+      id: crypto.randomUUID(),
+      ownerUserId: req.user!.id,
+      ...sanitized,
+      ein: ein ? encrypt(ein) : null,
       logoR2Key: logoR2Key || null,
       fiscalYearStart: typeof fiscalYearStart === 'number' ? fiscalYearStart : 1,
     }).returning()
@@ -133,29 +139,29 @@ router.put('/:orgId', async (req, res) => {
   } = req.body
 
   try {
-    // Verify the org belongs to the current user
-    const org = await db.query.organizations.findFirst({
-      where: (orgs, { and, eq }) => and(eq(orgs.id, orgId), eq(orgs.ownerUserId, req.user!.id)),
-      columns: { id: true },
-    })
-    if (!org) {
+    const userOrg = await getUserOrg(req.user!.id)
+    if (!userOrg || userOrg.orgId !== orgId) {
       res.status(404).json({ error: 'Organization not found' })
       return
     }
 
+    const sanitized = sanitizeObject({
+      name: businessName || 'My Business',
+      type: businessType || 'sole_proprietor',
+      industry: industry || null,
+      addressLine1: addressLine1 || null,
+      addressLine2: addressLine2 || null,
+      city: city || null,
+      state: state || null,
+      zip: zip || null,
+      phone: phone || null,
+      website: website || null,
+    }, ['name', 'type', 'industry', 'addressLine1', 'addressLine2', 'city', 'state', 'zip', 'phone', 'website'])
+
     await db.update(organizations)
       .set({
-        name: businessName || 'My Business',
-        type: businessType || 'sole_proprietor',
-        industry: industry || null,
-        addressLine1: addressLine1 || null,
-        addressLine2: addressLine2 || null,
-        city: city || null,
-        state: state || null,
-        zip: zip || null,
-        phone: phone || null,
-        website: website || null,
-        ein: ein || null,
+        ...sanitized,
+        ein: ein ? encrypt(ein) : undefined,
         logoR2Key: logoR2Key || null,
         fiscalYearStart: typeof fiscalYearStart === 'number' ? fiscalYearStart : 1,
       })

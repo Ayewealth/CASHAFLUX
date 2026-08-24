@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { authClient } from '@/lib/auth-client'
+import { useAuthRedirect } from '@/lib/useAuthRedirect'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Lock, Mail, User, Eye, EyeOff } from 'lucide-react'
 import { AuthLayout } from '@/components/AuthLayout'
+import { usePageMeta } from '@/lib/usePageMeta'
 
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
   let score = 0
@@ -30,6 +32,7 @@ function getPasswordStrength(password: string): { score: number; label: string; 
 
 export default function SignupPage() {
   const navigate = useNavigate()
+  const { isPending, hasSession } = useAuthRedirect()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -38,8 +41,19 @@ export default function SignupPage() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  usePageMeta({ title: 'Create Account', description: 'Create your free Cashaflux account. No credit card required. Start invoicing and tracking expenses today.' })
 
   const strength = getPasswordStrength(password)
+
+  if (isPending) {
+    return (
+      <div className="min-h-[100dvh] flex bg-bg items-center justify-center">
+        <div className="animate-pulse text-text-muted">Loading...</div>
+      </div>
+    )
+  }
+
+  if (hasSession) return null
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

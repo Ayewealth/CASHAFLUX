@@ -1,5 +1,7 @@
 import express from 'express'
 import { createServer } from 'http'
+import helmet from 'helmet'
+import cors from 'cors'
 import rateLimit from 'express-rate-limit'
 import { toNodeHandler } from 'better-auth/node'
 import { auth } from './auth'
@@ -11,6 +13,43 @@ import './types'
 
 const app = express()
 const httpServer = createServer(app)
+
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", 'https://cdn.jsdelivr.net', 'https://js.stripe.com'],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://fonts.gstatic.com'],
+      fontSrc: ["'self'", 'https://cdn.jsdelivr.net', 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:', 'https://images.unsplash.com', 'https://*.r2.dev'],
+      connectSrc: ["'self'", 'https://api.stripe.com', 'https://resend.com'],
+      frameSrc: ["'self'", 'https://js.stripe.com'],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}))
+
+// CORS — restrict to primary domain in production
+if (env.NODE_ENV === 'production') {
+  app.use(cors({ origin: 'https://cashaflux.com', credentials: true }))
+} else {
+  app.use(cors({ origin: true, credentials: true }))
+}
+
+// Global rate limit: 200 req/min per IP as safety net
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later' },
+})
+app.use('/api', globalLimiter)
+
+// Stripe webhook MUST be mounted BEFORE express.json() — it needs raw body
+import stripeWebhookRoutes from './routes/stripe-webhook'
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), stripeWebhookRoutes)
 
 app.use(express.json())
 
@@ -119,8 +158,17 @@ app.use('/api/reports', reportsRoutes)
 import taxRoutes from './routes/tax'
 app.use('/api/tax', taxRoutes)
 
+// Blog routes — public
+import blogRoutes from './routes/blog'
+app.use('/api/blog', blogRoutes)
+
+// Contact routes — public
+import contactRoutes from './routes/contact'
+app.use('/api/contact', contactRoutes)
+
 // Subscription routes — Stripe billing
-app.use('/api/subscription', requireAuth)
+import subscriptionRoutes from './routes/subscription'
+app.use('/api/subscription', subscriptionRoutes)
 
 // Payroll routes — CRUD + CSV export for payroll entries
 import payrollRoutes from './routes/payroll'
@@ -129,6 +177,75 @@ app.use('/api/payroll', payrollRoutes)
 // Activity log routes — read team/organization activity
 import activityLogRoutes from './routes/activity-log'
 app.use('/api/activity-log', activityLogRoutes)
+
+// Demo mode routes — generate/clean demo data
+import demoRoutes from './routes/demo'
+app.use('/api/demo', demoRoutes)
+
+// --- SEO routes ---
+
+app.get('/robots.txt', (_req, res) => {
+  res.type('text/plain')
+  res.send(`User-agent: *
+Allow: /
+Allow: /pricing
+Allow: /features
+Allow: /blog
+Allow: /how-it-works
+Allow: /about
+Allow: /contact
+Allow: /privacy
+Allow: /terms
+Disallow: /dashboard
+Disallow: /api
+Disallow: /onboarding
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
+
+Sitemap: https://cashaflux.com/sitemap.xml
+`)
+})
+
+app.get('/sitemap.xml', async (_req, res) => {
+  const BASE = 'https://cashaflux.com'
+  const publicRoutes = [
+    '', '/pricing', '/features', '/blog', '/how-it-works',
+    '/about', '/contact', '/privacy', '/terms',
+  ]
+  const urls = publicRoutes.map((path) => ({
+    loc: `${BASE}${path}`,
+    changefreq: path === '' ? 'weekly' : 'monthly',
+    priority: path === '' ? '1.0' : '0.8',
+  }))
+
+  try {
+    const { db } = await import('./db/client')
+    const { blogPosts } = await import('@shared/schema')
+    const posts = await db.query.blogPosts.findMany({
+      columns: { slug: true, createdAt: true },
+      where: (p, { isNotNull }) => isNotNull(p.publishedAt),
+    })
+    for (const post of posts) {
+      urls.push({
+        loc: `${BASE}/blog/${post.slug}`,
+        changefreq: 'monthly',
+        priority: '0.6',
+      })
+    }
+  } catch {
+    // DB unavailable; serve with public routes only
+  }
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.map((u) => `  <url>\n    <loc>${u.loc}</loc>\n    <changefreq>${u.changefreq}</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`).join('\n')}
+</urlset>`
+
+  res.type('application/xml').send(xml)
+})
 
 // --- Static / Vite ---
 // In production: serve pre-built client from dist/client/

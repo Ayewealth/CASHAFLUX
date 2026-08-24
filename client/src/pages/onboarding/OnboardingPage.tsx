@@ -31,6 +31,7 @@ interface FormData {
   logoR2Key: string | null
   inviteEmails: string[]
   plan: string
+  billingInterval: 'monthly' | 'annual'
   orgId: string | null
 }
 
@@ -50,6 +51,7 @@ const DEFAULT_FORM: FormData = {
   logoR2Key: null,
   inviteEmails: [],
   plan: 'free',
+  billingInterval: 'monthly',
   orgId: null,
 }
 
@@ -84,29 +86,32 @@ const PLANS = [
   {
     name: 'Free',
     id: 'free',
-    monthly: '$0',
-    annual: null,
-    savings: null,
+    price: 0,
     features: ['5 clients', 'Invoicing', 'Expense tracking'],
     popular: false,
+    cta: 'Start Free',
   },
   {
     name: 'Pro',
     id: 'pro',
-    monthly: '$19',
-    annual: '$180/yr',
+    monthly: 19,
+    annual: 180,
     savings: 'Save $48/yr',
+    savingsPercent: 'Save 21%',
     features: ['Unlimited clients', 'Bank sync', 'Recurring invoices', 'Advanced reports'],
     popular: true,
+    cta: 'Upgrade to Pro',
   },
   {
     name: 'Business',
     id: 'business',
-    monthly: '$39',
-    annual: null,
-    savings: null,
+    monthly: 39,
+    annual: 360,
+    savings: 'Save $108/yr',
+    savingsPercent: 'Save 23%',
     features: ['Everything in Pro', 'Team members (up to 5)', 'Payroll-ready exports', 'Priority support'],
     popular: false,
+    cta: 'Upgrade to Business',
   },
 ] as const
 
@@ -118,6 +123,7 @@ export default function OnboardingPage() {
   const [emails, setEmails] = useState<string[]>([''])
   const [initialized, setInitialized] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [checkoutPending, setCheckoutPending] = useState(false)
   const [logoUploading, setLogoUploading] = useState(false)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -286,18 +292,26 @@ export default function OnboardingPage() {
     setSubmitting(true)
     try {
       if (form.plan !== 'free') {
-        const res = await fetch('/api/user/plan', {
-          method: 'PUT',
+        const res = await fetch('/api/subscription/checkout', {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ plan: form.plan }),
+          body: JSON.stringify({
+            plan: form.plan,
+            interval: form.billingInterval,
+            successUrl: `${window.location.origin}/dashboard`,
+            cancelUrl: `${window.location.origin}/onboarding`,
+          }),
         })
-        if (!res.ok) throw new Error('Failed to update plan')
+        if (!res.ok) throw new Error('Failed to start checkout')
+        const data = await res.json()
+        // Redirect to Stripe Checkout
+        window.location.href = data.url
+      } else {
+        await fetch('/api/onboarding/progress', { method: 'DELETE' })
+        navigate('/dashboard', { replace: true })
       }
-      await fetch('/api/onboarding/progress', { method: 'DELETE' })
-      navigate('/dashboard', { replace: true })
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong.')
-    } finally {
       setSubmitting(false)
     }
   }
@@ -712,31 +726,63 @@ export default function OnboardingPage() {
         {/* Step 4: Choose Plan */}
         {currentStep === 4 && (
           <div className="max-w-3xl mx-auto space-y-8">
+            {/* Billing interval toggle */}
+            <div className="flex justify-center">
+              <div className="flex gap-1 bg-muted/50 p-0.5 rounded-lg border border-border/50">
+                <button
+                  type="button"
+                  onClick={() => updateField('billingInterval', 'monthly')}
+                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                    form.billingInterval === 'monthly' ? 'bg-accent text-white shadow-sm' : 'text-muted-foreground hover:text-text'
+                  }`}
+                >
+                  Monthly
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateField('billingInterval', 'annual')}
+                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                    form.billingInterval === 'annual' ? 'bg-accent text-white shadow-sm' : 'text-muted-foreground hover:text-text'
+                  }`}
+                >
+                  Annual <span className="text-[10px] opacity-80 ml-0.5">Save 20%</span>
+                </button>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {PLANS.map((plan) => {
                 const isSelected = form.plan === plan.id
+                const displayPrice = 'monthly' in plan
+                  ? (form.billingInterval === 'annual' ? `$${plan.annual}` : `$${plan.monthly}`)
+                  : '$0'
+                const intervalLabel = 'monthly' in plan
+                  ? (form.billingInterval === 'annual' ? '/yr' : '/mo')
+                  : ''
                 return (
-                  <button key={plan.id} type="button" onClick={() => setForm(prev => ({ ...prev, plan: plan.id }))}
-                    className={`relative flex flex-col items-center rounded-xl border-2 p-6 text-left transition-all ${
+                  <button key={plan.id} type="button" onClick={() => updateField('plan', plan.id)}
+                    className={`relative flex flex-col rounded-xl border-2 p-6 text-left transition-all ${
                       isSelected ? 'border-accent bg-accent/5 shadow-sm' : 'border-border bg-surface hover:border-accent/40'
                     } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2`}
                   >
                     {plan.popular && (
-                      <span className="absolute -top-2.5 inline-flex px-2.5 py-0.5 text-xs font-semibold text-white bg-accent rounded-full">Most popular</span>
+                      <span className="absolute -top-2.5 left-4 inline-flex px-2.5 py-0.5 text-xs font-semibold text-white bg-accent rounded-full">Most popular</span>
                     )}
                     <div className="flex items-center gap-2 mb-3">
                       <CheckCircle2 className={`w-5 h-5 ${isSelected ? 'text-accent' : 'text-transparent'}`} />
                       <h3 className="text-base font-bold text-text">{plan.name}</h3>
                     </div>
-                    <div className="text-center mb-1">
-                      <span className="text-3xl font-bold text-text tracking-tight">{plan.monthly}</span>
-                      <span className="text-sm text-text-muted">/mo</span>
+                    <div className="mb-4">
+                      <span className="text-3xl font-bold text-text tracking-tight">{displayPrice}</span>
+                      <span className="text-sm text-text-muted">{intervalLabel}</span>
+                      {'monthly' in plan && form.billingInterval === 'annual' && (
+                        <p className="text-[11px] text-success font-medium mt-1">${plan.monthly}/mo if paid monthly</p>
+                      )}
                     </div>
-                    {plan.annual && <p className="text-xs text-text-muted mb-1">{plan.annual} when billed annually</p>}
-                    {plan.savings && (
-                      <span className="inline-block text-[11px] font-medium text-success px-2 py-0.5 rounded-full bg-success/10 mb-4">{plan.savings}</span>
+                    {'savings' in plan && form.billingInterval === 'annual' && (
+                      <span className="inline-block text-[11px] font-medium text-success px-2 py-0.5 rounded-full bg-success/10 mb-4 w-fit">{plan.savings}</span>
                     )}
-                    <ul className="w-full space-y-2 mt-4">
+                    <ul className="w-full space-y-2 flex-1">
                       {plan.features.map(f => (
                         <li key={f} className="text-sm text-text-muted flex items-center gap-2">
                           <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" /> {f}

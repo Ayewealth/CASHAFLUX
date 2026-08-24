@@ -4,6 +4,7 @@ import { db } from '../db/client'
 import { organizations, insertOrganizationSchema } from '@shared/schema'
 import { eq } from 'drizzle-orm'
 import { getUserOrg } from '../lib/org'
+import { decrypt, isEncrypted } from '../lib/encryption'
 
 const router = Router()
 router.use(requireAuth)
@@ -22,6 +23,10 @@ router.get('/', async (req, res) => {
     if (!org) {
       res.status(404).json({ error: 'Organization not found' })
       return
+    }
+
+    if (org.ein && isEncrypted(org.ein)) {
+      org.ein = decrypt(org.ein)
     }
 
     res.json(org)

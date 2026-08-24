@@ -1,18 +1,32 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { authClient } from '@/lib/auth-client'
+import { useAuthRedirect } from '@/lib/useAuthRedirect'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Lock, Mail } from 'lucide-react'
 import { AuthLayout } from '@/components/AuthLayout'
+import { usePageMeta } from '@/lib/usePageMeta'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const { isPending, hasSession } = useAuthRedirect()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  usePageMeta({ title: 'Sign In', description: 'Sign in to your Cashaflux account to manage invoices, expenses, and financial reports.' })
+  if (isPending) {
+    return (
+      <div className="min-h-[100dvh] flex bg-bg items-center justify-center">
+        <div className="animate-pulse text-text-muted">Loading...</div>
+      </div>
+    )
+  }
+
+  if (hasSession) return null
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
