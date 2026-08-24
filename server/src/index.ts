@@ -6,8 +6,7 @@ import { auth } from './auth'
 import { env } from './env'
 import { serveStatic } from './static'
 import { requireAuth } from './middleware/auth'
-import { db } from './db/client'
-import { organizations, orgMembers } from '@shared/schema'
+import { seedIndustries } from './seed'
 import './types'
 
 const app = express()
@@ -39,45 +38,97 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true })
 })
 
-// Onboarding — create organization + member record
-app.post('/api/onboarding', requireAuth, async (req, res) => {
-  const { businessName, businessType, industry, fiscalYearStart, plan } = req.body
-  try {
-    const [org] = await db.insert(organizations).values({
-      id: crypto.randomUUID(),
-      ownerUserId: req.user!.id,
-      name: businessName || 'My Business',
-      type: businessType || 'sole_proprietor',
-      fiscalYearStart: typeof fiscalYearStart === 'number' ? fiscalYearStart : 1,
-    }).returning()
-    await db.insert(orgMembers).values({
-      id: crypto.randomUUID(),
-      orgId: org.id,
-      userId: req.user!.id,
-      role: 'owner',
-    })
-    res.json({ orgId: org.id })
-  } catch {
-    res.status(500).json({ error: 'Failed to create organization' })
-  }
-})
+// Onboarding routes — mounted before the generic requireAuth gate
+// since the router applies requireAuth internally
+import onboardingRoutes from './routes/onboarding'
+app.use('/api/onboarding', onboardingRoutes)
+
+// Industries routes — used by the industry combobox in onboarding
+import industriesRoutes from './routes/industries'
+app.use('/api/industries', industriesRoutes)
+
+// Team routes — invite, list, remove members
+import teamRoutes from './routes/team'
+app.use('/api/team', teamRoutes)
+
+// User routes — plan, settings
+import userRoutes from './routes/user'
+app.use('/api/user', userRoutes)
+
+// Upload routes — R2 pre-signed URLs for logo uploads
+import uploadsRoutes from './routes/uploads'
+app.use('/api/uploads', uploadsRoutes)
+
+// Organization routes — fetch and update the current user's org
+import organizationsRoutes from './routes/organizations'
+app.use('/api/organizations', organizationsRoutes)
+
+// Member routes — list members of the current user's org
+import membersRoutes from './routes/members'
+app.use('/api/members', membersRoutes)
+
+// Client routes — CRUD for clients scoped to the user's org
+import clientsRoutes from './routes/clients'
+app.use('/api/clients', clientsRoutes)
+
+// Invoice routes — CRUD with line items scoped to the user's org
+import invoicesRoutes from './routes/invoices'
+app.use('/api/invoices', invoicesRoutes)
+
+// Expense routes — CRUD for expenses scoped to the user's org
+import expensesRoutes from './routes/expenses'
+app.use('/api/expenses', expensesRoutes)
+
+// Bank account routes — CRUD for bank accounts scoped to the user's org
+import bankAccountsRoutes from './routes/bank-accounts'
+app.use('/api/bank-accounts', bankAccountsRoutes)
+
+// Bank transaction routes — CRUD + CSV import scoped to the user's org
+import bankTransactionsRoutes from './routes/bank-transactions'
+app.use('/api/bank-transactions', bankTransactionsRoutes)
+
+// Settings routes — fetch and update org settings
+import settingsRoutes from './routes/settings'
+app.use('/api/settings', settingsRoutes)
+
+// Dashboard routes — KPI summary for the dashboard
+import dashboardRoutes from './routes/dashboard'
+app.use('/api/dashboard', dashboardRoutes)
+
+// Recurring invoice routes — create, list, process
+import recurringInvoicesRoutes from './routes/recurring-invoices'
+app.use('/api/recurring-invoices', recurringInvoicesRoutes)
+
+// Expense category routes — IRS defaults + custom per org
+import expenseCategoriesRoutes from './routes/expense-categories'
+app.use('/api/expense-categories', expenseCategoriesRoutes)
+
+// Mileage routes — CRUD for mileage logs
+import mileageRoutes from './routes/mileage'
+app.use('/api/mileage', mileageRoutes)
 
 // --- Protected API routes ---
 // Every business endpoint below requires an authenticated Better Auth
 // session. Public/unauthenticated endpoints (/api/auth/*, /api/health,
 // /api/blog, /api/contact) are mounted above this gate and are skipped.
-app.use('/api/invoices', requireAuth)
-app.use('/api/expenses', requireAuth)
-app.use('/api/clients', requireAuth)
-app.use('/api/bank-accounts', requireAuth)
-app.use('/api/bank-transactions', requireAuth)
-app.use('/api/reports', requireAuth)
-app.use('/api/tax', requireAuth)
-app.use('/api/mileage', requireAuth)
-app.use('/api/team', requireAuth)
-app.use('/api/settings', requireAuth)
+// Reports routes — financial report generation
+import reportsRoutes from './routes/reports'
+app.use('/api/reports', reportsRoutes)
+
+// Tax routes — tax summary and ready-export
+import taxRoutes from './routes/tax'
+app.use('/api/tax', taxRoutes)
+
+// Subscription routes — Stripe billing
 app.use('/api/subscription', requireAuth)
-app.use('/api/dashboard', requireAuth)
+
+// Payroll routes — CRUD + CSV export for payroll entries
+import payrollRoutes from './routes/payroll'
+app.use('/api/payroll', payrollRoutes)
+
+// Activity log routes — read team/organization activity
+import activityLogRoutes from './routes/activity-log'
+app.use('/api/activity-log', activityLogRoutes)
 
 // --- Static / Vite ---
 // In production: serve pre-built client from dist/client/
@@ -90,6 +141,9 @@ if (env.NODE_ENV === 'production') {
   const { setupVite } = await import('./vite')
   await setupVite(httpServer, app)
 }
+
+// Seed data on startup (checks if already seeded internally)
+await seedIndustries()
 
 httpServer.listen(env.PORT, () => {
   console.log(`Listening on http://localhost:${env.PORT} [${env.NODE_ENV}]`)

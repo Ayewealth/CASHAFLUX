@@ -1,20 +1,7 @@
 import { type Request, type Response, type NextFunction } from 'express'
 import { auth } from '../auth'
+import { getUserOrg } from '../lib/org'
 
-/**
- * Protect an API route behind a Better Auth session.
- *
- * Calls `auth.api.getSession` with the incoming request headers (which
- * carries the Better Auth session cookie). On miss, responds 401. On hit,
- * attaches `req.user` and `req.session` for downstream handlers.
- *
- * Better Auth's `getSession` expects a Web Fetch `Headers` instance; Express
- * exposes Node's `IncomingHttpHeaders` (which allows array values), so we
- * construct a `Headers` here. The cast is safe — Express flattens array
- * headers into a single string for consumption.
- *
- * No role/permission checks yet — those land in Phase 7.
- */
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const session = await auth.api.getSession({
     headers: new Headers(req.headers as Record<string, string>),
@@ -26,4 +13,19 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   req.user = session.user
   req.session = session.session
   next()
+}
+
+export function requireRole(...roles: string[]) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      res.status(401).json({ error: 'Unauthorized' })
+      return
+    }
+    const userOrg = await getUserOrg(req.user.id)
+    if (!userOrg || !roles.includes(userOrg.role)) {
+      res.status(403).json({ error: 'Forbidden' })
+      return
+    }
+    next()
+  }
 }

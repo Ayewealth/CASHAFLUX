@@ -1,6 +1,11 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { authClient } from '../lib/auth-client'
+import { authClient } from '@/lib/auth-client'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Lock, Mail } from 'lucide-react'
+import { AuthLayout } from '@/components/AuthLayout'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -19,35 +24,77 @@ export default function LoginPage() {
       setError('Invalid email or password')
       return
     }
-    navigate('/dashboard', { replace: true })
+    navigate('/onboarding', { replace: true })
   }
 
   return (
-    <div className="min-h-screen bg-bg flex items-center justify-center p-4">
-      <div className="w-full max-w-sm bg-surface p-8 rounded-xl border border-border">
-        <h1 className="text-2xl font-bold text-primary mb-6 text-center">Log in</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-text mb-1">Email</label>
-            <input id="email" type="email" required value={email} onChange={e => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-text focus:outline-none focus:ring-2 focus:ring-accent" />
+    <AuthLayout
+      heading="Welcome back"
+      subheading="Sign in to manage your invoices and finances."
+      brandContent={{
+        headline: 'Invoicing that keeps your cash flowing',
+        body: 'Send professional invoices, track expenses, and manage finances. Built for freelancers and small teams who need to get paid faster.',
+        badges: ['SOC 2 compliant', 'Bank-level encryption'],
+      }}
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+            <Input
+              id="email"
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@company.com"
+              className="pl-10 h-10"
+            />
           </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-text mb-1">Password</label>
-            <input id="password" type="password" required value={password} onChange={e => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-text focus:outline-none focus:ring-2 focus:ring-accent" />
-          </div>
-          {error && <p className="text-sm text-danger" aria-live="polite">{error}</p>}
-          <button type="submit" disabled={loading}
-            className="w-full py-2 bg-accent text-white font-semibold rounded-lg hover:bg-brand-blue disabled:opacity-50">
-            {loading ? 'Logging in...' : 'Log in'}
-          </button>
-        </form>
-        <div className="mt-4 text-center space-y-2 text-sm">
-          <Link to="/forgot-password" className="text-accent hover:underline block">Forgot password?</Link>
-          <Link to="/signup" className="text-text-muted hover:text-text block">Don't have an account? Sign up</Link>
         </div>
-      </div>
-    </div>
+
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+            <Link to="/forgot-password" className="text-xs text-accent hover:underline">Forgot password?</Link>
+          </div>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+            <Input
+              id="password"
+              type="password"
+              required
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              className="pl-10 h-10"
+            />
+          </div>
+        </div>
+
+        {error && (
+          <div className="text-sm text-danger flex items-center gap-1.5" role="alert">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="15" y1="9" x2="9" y2="15" />
+              <line x1="9" y1="9" x2="15" y2="15" />
+            </svg>
+            {error}
+          </div>
+        )}
+
+        <Button type="submit" disabled={loading} size="lg" className="w-full mt-2">
+          {loading ? 'Signing in...' : 'Sign in'}
+        </Button>
+      </form>
+
+      <p className="mt-8 text-center text-sm text-text-muted">
+        Don't have an account?{' '}
+        <Link to="/signup" className="text-accent font-medium hover:underline">Create one</Link>
+      </p>
+    </AuthLayout>
   )
 }

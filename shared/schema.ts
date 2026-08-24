@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, decimal, boolean, pgEnum, uniqueIndex } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, integer, decimal, boolean, pgEnum, uniqueIndex, index } from 'drizzle-orm/pg-core'
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
@@ -88,9 +88,19 @@ export const organizations = pgTable('organizations', {
   ownerUserId: text('owner_user_id').notNull().references(() => users.id),
   name: text('name').notNull(),
   type: orgTypeEnum('type'),
-  address: text('address'),
+  industry: text('industry'),
+  addressLine1: text('address_line1'),
+  addressLine2: text('address_line2'),
+  city: text('city'),
+  state: text('state'),
+  zip: text('zip'),
+  phone: text('phone'),
+  website: text('website'),
   ein: text('ein'),
   logoR2Key: text('logo_r2_key'),
+  invoiceDefaults: text('invoice_defaults'),
+  notificationPreferences: text('notification_preferences'),
+  currency: text('currency').default('USD').notNull(),
   fiscalYearStart: integer('fiscal_year_start').default(1).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
@@ -173,11 +183,13 @@ export const bankAccounts = pgTable('bank_accounts', {
   currency: text('currency').default('USD').notNull(),
   currentBalance: decimal('current_balance', { precision: 14, scale: 2 }).default('0').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+}, (t) => ({
+  orgIdx: index('bank_accounts_org_idx').on(t.orgId),
+}))
 
 export const bankTransactions = pgTable('bank_transactions', {
   id: text('id').primaryKey(),
-  bankAccountId: text('bank_account_id').notNull().references(() => bankAccounts.id),
+  bankAccountId: text('bank_account_id').notNull().references(() => bankAccounts.id, { onDelete: 'cascade' }),
   orgId: text('org_id').notNull().references(() => organizations.id),
   date: timestamp('date').notNull(),
   description: text('description').notNull(),
@@ -188,7 +200,10 @@ export const bankTransactions = pgTable('bank_transactions', {
   matchedInvoiceId: text('matched_invoice_id').references(() => invoices.id),
   matchedExpenseId: text('matched_expense_id').references(() => expenses.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+}, (t) => ({
+  orgAccountIdx: index('bank_transactions_org_account_idx').on(t.orgId, t.bankAccountId),
+  accountReconciledIdx: index('bank_transactions_account_reconciled_idx').on(t.bankAccountId, t.reconciled),
+}))
 
 export const recurringInvoices = pgTable('recurring_invoices', {
   id: text('id').primaryKey(),
@@ -199,6 +214,21 @@ export const recurringInvoices = pgTable('recurring_invoices', {
   endDate: timestamp('end_date'),
   active: boolean('active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+export const expenseCategories = pgTable('expense_categories', {
+  id: text('id').primaryKey(),
+  orgId: text('org_id').notNull().references(() => organizations.id),
+  name: text('name').notNull(),
+  irsDefault: boolean('irs_default').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+export const expenseAllocations = pgTable('expense_allocations', {
+  id: text('id').primaryKey(),
+  expenseId: text('expense_id').notNull().references(() => expenses.id, { onDelete: 'cascade' }),
+  category: text('category').notNull(),
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
 })
 
 export const mileageLogs = pgTable('mileage_logs', {
@@ -233,6 +263,19 @@ export const contactSubmissions = pgTable('contact_submissions', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
+export const payrollEntries = pgTable('payroll_entries', {
+  id: text('id').primaryKey(),
+  orgId: text('org_id').notNull().references(() => organizations.id),
+  name: text('name').notNull(),
+  type: text('type').notNull(), // w2 | 1099
+  payDate: timestamp('pay_date').notNull(),
+  grossAmount: decimal('gross_amount', { precision: 12, scale: 2 }).notNull(),
+  hours: decimal('hours', { precision: 6, scale: 1 }),
+  status: text('status').default('draft').notNull(), // draft | paid
+  createdBy: text('created_by').notNull().references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
 export const activityLog = pgTable('activity_log', {
   id: text('id').primaryKey(),
   orgId: text('org_id').notNull().references(() => organizations.id),
@@ -241,6 +284,21 @@ export const activityLog = pgTable('activity_log', {
   entityType: text('entity_type').notNull(),
   entityId: text('entity_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+export const industries = pgTable('industries', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull().unique(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+export const onboardingProgress = pgTable('onboarding_progress', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().unique().references(() => users.id),
+  currentStep: integer('current_step').default(1).notNull(),
+  formData: text('form_data').default('{}').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull().$onUpdate(() => new Date()),
 })
 
 // ─── Zod Schemas ───
@@ -253,13 +311,18 @@ export const insertClientSchema = createInsertSchema(clients).omit({ createdAt: 
 export const insertInvoiceSchema = createInsertSchema(invoices).omit({ createdAt: true, updatedAt: true })
 export const insertInvoiceLineItemSchema = createInsertSchema(invoiceLineItems)
 export const insertExpenseSchema = createInsertSchema(expenses).omit({ createdAt: true })
+export const insertExpenseCategorySchema = createInsertSchema(expenseCategories).omit({ createdAt: true })
+export const insertExpenseAllocationSchema = createInsertSchema(expenseAllocations)
 export const insertBankAccountSchema = createInsertSchema(bankAccounts).omit({ createdAt: true })
 export const insertBankTransactionSchema = createInsertSchema(bankTransactions).omit({ createdAt: true })
 export const insertRecurringInvoiceSchema = createInsertSchema(recurringInvoices).omit({ createdAt: true })
 export const insertMileageLogSchema = createInsertSchema(mileageLogs).omit({ createdAt: true })
+export const insertPayrollEntrySchema = createInsertSchema(payrollEntries).omit({ createdAt: true })
 export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({ createdAt: true })
 export const insertContactSubmissionSchema = createInsertSchema(contactSubmissions).omit({ createdAt: true })
 export const insertActivityLogSchema = createInsertSchema(activityLog).omit({ createdAt: true })
+export const insertIndustrySchema = createInsertSchema(industries).omit({ createdAt: true })
+export const insertOnboardingProgressSchema = createInsertSchema(onboardingProgress).omit({ createdAt: true, updatedAt: true })
 
 // ─── Inferred Types ───
 
@@ -276,6 +339,10 @@ export type InsertInvoice = z.infer<typeof insertInvoiceSchema>
 export type InvoiceLineItem = typeof invoiceLineItems.$inferSelect
 export type Expense = typeof expenses.$inferSelect
 export type InsertExpense = z.infer<typeof insertExpenseSchema>
+export type ExpenseCategory = typeof expenseCategories.$inferSelect
+export type InsertExpenseCategory = z.infer<typeof insertExpenseCategorySchema>
+export type ExpenseAllocation = typeof expenseAllocations.$inferSelect
+export type InsertExpenseAllocation = z.infer<typeof insertExpenseAllocationSchema>
 export type BankAccount = typeof bankAccounts.$inferSelect
 export type InsertBankAccount = z.infer<typeof insertBankAccountSchema>
 export type BankTransaction = typeof bankTransactions.$inferSelect
@@ -293,3 +360,9 @@ export type InsertRecurringInvoice = z.infer<typeof insertRecurringInvoiceSchema
 export type InsertMileageLog = z.infer<typeof insertMileageLogSchema>
 export type InsertContactSubmission = z.infer<typeof insertContactSubmissionSchema>
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>
+export type Industry = typeof industries.$inferSelect
+export type InsertIndustry = z.infer<typeof insertIndustrySchema>
+export type PayrollEntry = typeof payrollEntries.$inferSelect
+export type InsertPayrollEntry = z.infer<typeof insertPayrollEntrySchema>
+export type OnboardingProgress = typeof onboardingProgress.$inferSelect
+export type InsertOnboardingProgress = z.infer<typeof insertOnboardingProgressSchema>

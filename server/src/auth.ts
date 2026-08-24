@@ -4,18 +4,6 @@ import { db } from './db/client'
 import { env } from './env'
 import { users } from '@shared/schema'
 
-/**
- * Validate password against the global auth policy.
- *
- * Better Auth v1.7.1's `emailAndPassword` config only exposes
- * `minPasswordLength` / `maxPasswordLength` — there is no
- * `passwordValidation` callback or regex hook. The sign-up /
- * password-reset route handlers MUST call this before invoking
- * `auth.api.signUp` / `auth.api.resetPassword` so complexity
- * rules are enforced server-side.
- *
- * Policy: 8-128 chars AND at least one digit.
- */
 export function validatePassword(password: string): void {
   if (password.length < 8 || password.length > 128) {
     throw new APIError('BAD_REQUEST', {
@@ -40,22 +28,38 @@ export const auth = betterAuth({
     minPasswordLength: 8,
     maxPasswordLength: 128,
     sendResetPassword: async (data) => {
-      const { sendEmail } = await import('./emails/send')
-      await sendEmail({
+      const { sendTemplateEmail, loadTemplate, renderTemplate } = await import('./emails/send')
+      const template = loadTemplate('reset-password')
+      const html = renderTemplate(template, { RESET_URL: data.url })
+      const result = await sendTemplateEmail({
         to: data.user.email,
         subject: 'Reset your Cashaflux password',
-        html: `<a href="${data.url}">Reset password</a>`,
+        html,
       })
+      if ('error' in result) {
+        console.error('[auth] Failed to send password reset email:', result.error)
+        throw new APIError('INTERNAL_SERVER_ERROR', {
+          message: 'Failed to send password reset email',
+        })
+      }
     },
   },
   emailVerification: {
     sendVerificationEmail: async (data) => {
-      const { sendEmail } = await import('./emails/send')
-      await sendEmail({
+      const { sendTemplateEmail, loadTemplate, renderTemplate } = await import('./emails/send')
+      const template = loadTemplate('verify-email')
+      const html = renderTemplate(template, { VERIFY_URL: data.url })
+      const result = await sendTemplateEmail({
         to: data.user.email,
         subject: 'Verify your Cashaflux email',
-        html: `<a href="${data.url}">Verify email</a>`,
+        html,
       })
+      if ('error' in result) {
+        console.error('[auth] Failed to send verification email:', result.error)
+        throw new APIError('INTERNAL_SERVER_ERROR', {
+          message: 'Failed to send verification email',
+        })
+      }
     },
   },
   databaseHooks: {
@@ -67,9 +71,24 @@ export const auth = betterAuth({
             name: user.name,
             email: user.email,
             emailVerified: user.emailVerified,
-            hashedPassword: '', // Better Auth owns the hash in account.password — this field is unused
+            hashedPassword: '',
             plan: 'free',
           })
+          try {
+            const { sendTemplateEmail, loadTemplate, renderTemplate } = await import('./emails/send')
+            const template = loadTemplate('welcome')
+            const html = renderTemplate(template, { APP_URL: env.BETTER_AUTH_URL })
+            const result = await sendTemplateEmail({
+              to: user.email,
+              subject: 'Welcome to Cashaflux — let\'s get started',
+              html,
+            })
+            if ('error' in result) {
+              console.error('[auth] Failed to send welcome email:', result.error)
+            }
+          } catch (err) {
+            console.error('[auth] Failed to send welcome email:', err)
+          }
         },
       },
     },
