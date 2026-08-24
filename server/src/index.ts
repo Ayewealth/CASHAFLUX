@@ -15,18 +15,23 @@ const app = express()
 const httpServer = createServer(app)
 
 // Security headers
+const cspDirectives: Record<string, string[]> = {
+  defaultSrc: ["'self'"],
+  scriptSrc: ["'self'", 'https://cdn.jsdelivr.net', 'https://js.stripe.com'],
+  styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://fonts.gstatic.com'],
+  fontSrc: ["'self'", 'https://cdn.jsdelivr.net', 'https://fonts.gstatic.com'],
+  imgSrc: ["'self'", 'data:', 'https://images.unsplash.com', 'https://*.r2.dev'],
+  connectSrc: ["'self'", 'https://api.stripe.com', 'https://resend.com'],
+  frameSrc: ["'self'", 'https://js.stripe.com'],
+}
+
+// In development, allow Vite's HMR inline scripts
+if (env.NODE_ENV !== 'production') {
+  cspDirectives.scriptSrc.push("'unsafe-inline'")
+}
+
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", 'https://cdn.jsdelivr.net', 'https://js.stripe.com'],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://fonts.gstatic.com'],
-      fontSrc: ["'self'", 'https://cdn.jsdelivr.net', 'https://fonts.gstatic.com'],
-      imgSrc: ["'self'", 'data:', 'https://images.unsplash.com', 'https://*.r2.dev'],
-      connectSrc: ["'self'", 'https://api.stripe.com', 'https://resend.com'],
-      frameSrc: ["'self'", 'https://js.stripe.com'],
-    },
-  },
+  contentSecurityPolicy: { directives: cspDirectives },
   crossOriginEmbedderPolicy: false,
 }))
 

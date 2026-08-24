@@ -4,13 +4,16 @@ import { queryClient } from './lib/queryClient'
 import { router } from './lib/router'
 import { Toaster } from './components/ui/toast'
 import CookieConsent from './components/shared/CookieConsent'
+import ErrorBoundary from './components/ErrorBoundary'
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-      <CookieConsent />
-      <Toaster />
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+        <CookieConsent />
+        <Toaster />
+      </QueryClientProvider>
+    </ErrorBoundary>
   )
 }
