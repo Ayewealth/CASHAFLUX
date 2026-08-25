@@ -34,8 +34,11 @@ vi.mock('../server/src/middleware/auth', () => ({
   requireAuth: vi.fn((req: any, _res: any, next: any) => {
     req.user = { id: 'user-1', name: 'Test', email: 'test@test.com' }
     req.session = { id: 's1', expiresAt: new Date() }
+    req.orgId = 'org-1'
+    req.orgRole = 'owner'
     next()
   }),
+  requireRole: vi.fn(() => (_req, _res, next) => next()),
 }))
 
 vi.mock('../server/src/lib/org', () => ({
@@ -56,18 +59,18 @@ describe('Onboarding API', () => {
   })
 
   it('GET /status returns onboarded=false when no org found', async () => {
-    mockDb.query.organizations.findFirst.mockResolvedValue(null)
+    mockDb.query.orgMembers.findFirst.mockResolvedValue(null)
     const res = await request.get('/api/onboarding/status')
     expect(res.status).toBe(200)
     expect(res.body.onboarded).toBe(false)
   })
 
   it('GET /status returns onboarded=true with orgId', async () => {
-    mockDb.query.organizations.findFirst.mockResolvedValue({ id: 'org-1' })
+    mockDb.query.orgMembers.findFirst.mockResolvedValue({ orgId: 'org-1', role: 'owner' })
     const res = await request.get('/api/onboarding/status')
     expect(res.status).toBe(200)
     expect(res.body.onboarded).toBe(true)
-    expect(res.body.orgId).toBe('org-1')
+    expect(res.body.hasOwnOrg).toBe(true)
   })
 
   it('POST / creates org and member record', async () => {

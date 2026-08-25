@@ -86,7 +86,7 @@ export default function HowItWorksPage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <SmoothScrollReveal>
-              <h1 className="text-4xl sm:text-5xl font-bold text-brand-navy tracking-tight mb-4">
+              <h1 className="text-4xl sm:text-5xl font-bold font-heading text-brand-navy tracking-tight mb-4">
                 Get your business <span className="text-brand-navy">financial-ready</span> in 3 steps
               </h1>
               <p className="text-base text-text-muted leading-relaxed max-w-lg mb-6">
@@ -118,10 +118,7 @@ export default function HowItWorksPage() {
             <SmoothScrollReveal delay={0.2}>
               <div className="bg-white rounded-2xl border border-border/50 shadow-xl shadow-brand-navy/5 p-6">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-3 h-3 rounded-full bg-danger" />
-                  <div className="w-3 h-3 rounded-full bg-warning" />
-                  <div className="w-3 h-3 rounded-full bg-success" />
-                  <span className="text-xs text-text-muted ml-2 font-mono">Progress</span>
+                  <span className="text-xs text-text-muted font-mono">Progress</span>
                 </div>
                 <div className="space-y-6">
                   {STEPS.map((s) => (
@@ -156,7 +153,7 @@ export default function HowItWorksPage() {
                     Step {step.step}
                   </span>
                 </div>
-                <h2 className="text-3xl sm:text-4xl font-bold text-brand-navy tracking-tight mb-4">{step.title}</h2>
+                <h2 className="text-3xl sm:text-4xl font-bold font-heading text-brand-navy tracking-tight mb-4">{step.title}</h2>
                 <p className="text-base text-text-muted leading-relaxed mb-6">{step.desc}</p>
                 <ul className="space-y-3">
                   {step.benefits.map((b) => (
@@ -191,7 +188,7 @@ export default function HowItWorksPage() {
       <section className="py-20 lg:py-28 bg-white">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <SmoothScrollReveal>
-            <h2 className="text-2xl sm:text-3xl font-bold text-brand-navy tracking-tight text-center mb-4">
+            <h2 className="text-2xl sm:text-3xl font-bold font-heading text-brand-navy tracking-tight text-center mb-4">
               What our users say
             </h2>
             <p className="text-base text-text-muted text-center mb-12 max-w-lg mx-auto">
@@ -225,7 +222,7 @@ export default function HowItWorksPage() {
       <section className="py-16 lg:py-24">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <SmoothScrollReveal>
-            <h2 className="text-2xl sm:text-3xl font-bold text-brand-navy tracking-tight text-center mb-4">
+            <h2 className="text-2xl sm:text-3xl font-bold font-heading text-brand-navy tracking-tight text-center mb-4">
               Connects with everything you use
             </h2>
             <p className="text-base text-text-muted text-center mb-12 max-w-lg mx-auto">
@@ -253,7 +250,7 @@ export default function HowItWorksPage() {
       <section className="py-16 lg:py-24 bg-white">
         <div className="max-w-3xl mx-auto px-6 lg:px-8">
           <SmoothScrollReveal>
-            <h2 className="text-2xl sm:text-3xl font-bold text-brand-navy tracking-tight text-center mb-4">
+            <h2 className="text-2xl sm:text-3xl font-bold font-heading text-brand-navy tracking-tight text-center mb-4">
               Common questions about getting started
             </h2>
           </SmoothScrollReveal>
@@ -287,7 +284,7 @@ export default function HowItWorksPage() {
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '24px 24px' }} />
         <div className="max-w-3xl mx-auto px-6 lg:px-8 text-center relative">
           <SmoothScrollReveal>
-            <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold font-heading text-white tracking-tight mb-4">
               Start your 3-step journey today
             </h2>
             <p className="text-base text-white/60 leading-relaxed mb-8 max-w-lg mx-auto">

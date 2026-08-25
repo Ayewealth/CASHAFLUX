@@ -1,6 +1,7 @@
 import { pgTable, text, timestamp, integer, decimal, boolean, pgEnum, uniqueIndex, index } from 'drizzle-orm/pg-core'
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
+import { nanoid } from 'nanoid'
 
 // ─── Enums ───
 
@@ -117,6 +118,17 @@ export const orgMembers = pgTable('org_members', {
   role: memberRoleEnum('role').default('member').notNull(),
   invitedAt: timestamp('invited_at'),
   joinedAt: timestamp('joined_at'),
+})
+
+export const invitations = pgTable('invitations', {
+  id: text('id').primaryKey().$defaultFn(() => nanoid()),
+  orgId: text('org_id').notNull().references(() => organizations.id),
+  email: text('email').notNull(),
+  token: text('token').notNull().unique().$defaultFn(() => nanoid()),
+  role: memberRoleEnum('role').default('member').notNull(),
+  status: text('status').default('pending').notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
 export const clients = pgTable('clients', {
@@ -270,6 +282,7 @@ export const blogPosts = pgTable('blog_posts', {
   slug: text('slug').notNull().unique(),
   contentMd: text('content_md').notNull(),
   excerpt: text('excerpt'),
+  image: text('image'),
   publishedAt: timestamp('published_at'),
   author: text('author'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -338,6 +351,7 @@ export const insertUserSchema = createInsertSchema(users).omit({ createdAt: true
 export const insertSessionSchema = createInsertSchema(sessions)
 export const insertOrganizationSchema = createInsertSchema(organizations).omit({ createdAt: true })
 export const insertOrgMemberSchema = createInsertSchema(orgMembers)
+export const insertInvitationSchema = createInsertSchema(invitations)
 export const insertClientSchema = createInsertSchema(clients).omit({ createdAt: true })
 export const insertInvoiceSchema = createInsertSchema(invoices).omit({ createdAt: true, updatedAt: true })
 export const insertInvoiceLineItemSchema = createInsertSchema(invoiceLineItems)
@@ -398,5 +412,7 @@ export type PayrollEntry = typeof payrollEntries.$inferSelect
 export type InsertPayrollEntry = z.infer<typeof insertPayrollEntrySchema>
 export type OnboardingProgress = typeof onboardingProgress.$inferSelect
 export type InsertOnboardingProgress = z.infer<typeof insertOnboardingProgressSchema>
+export type Invitation = typeof invitations.$inferSelect
+export type InsertInvitation = z.infer<typeof insertInvitationSchema>
 export type DemoSession = typeof demoSessions.$inferSelect
 export type InsertDemoSession = z.infer<typeof insertDemoSessionSchema>

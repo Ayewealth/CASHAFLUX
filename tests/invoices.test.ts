@@ -28,8 +28,11 @@ vi.mock('../server/src/middleware/auth', () => ({
   requireAuth: vi.fn((req, _res, next) => {
     req.user = { id: 'user-1', name: 'Test', email: 'test@example.com' }
     req.session = { id: 's1', expiresAt: new Date() }
+    req.orgId = 'org-1'
+    req.orgRole = 'owner'
     next()
   }),
+  requireRole: vi.fn(() => (_req, _res, next) => next()),
 }))
 
 vi.mock('../server/src/lib/org', () => ({

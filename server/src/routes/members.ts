@@ -3,15 +3,13 @@ import { requireAuth } from '../middleware/auth'
 import { db } from '../db/client'
 import { orgMembers, user } from '@shared/schema'
 import { eq } from 'drizzle-orm'
-import { getUserOrg } from '../lib/org'
 
 const router = Router()
 router.use(requireAuth)
 
 router.get('/', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
@@ -29,7 +27,7 @@ router.get('/', async (req, res) => {
       })
       .from(orgMembers)
       .innerJoin(user, eq(user.id, orgMembers.userId))
-      .where(eq(orgMembers.orgId, userOrg.orgId))
+      .where(eq(orgMembers.orgId, req.orgId))
 
     res.json(members)
   } catch {

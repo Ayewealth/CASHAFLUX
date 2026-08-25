@@ -99,3 +99,17 @@ export function useInvoiceHistory() {
     staleTime: 5 * 60 * 1000,
   })
 }
+
+export function usePlanLimits() {
+  const { data: subscription, isLoading } = useSubscriptionStatus()
+  return {
+    isLoading,
+    plan: subscription?.plan ?? 'free',
+    status: subscription?.status ?? 'active',
+    isPastDue: subscription?.status === 'past_due',
+    isFree: (subscription?.plan ?? 'free') === 'free',
+    isPro: subscription?.plan === 'pro',
+    isBusiness: subscription?.plan === 'business',
+    canAccess: (...plans: string[]) => plans.includes(subscription?.plan ?? 'free') && subscription?.status !== 'past_due',
+  }
+}

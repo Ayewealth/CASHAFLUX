@@ -75,7 +75,7 @@ export default function PricingPage() {
       <section className="pt-32 pb-16 lg:pt-40 lg:pb-20 text-center">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <SmoothScrollReveal>
-            <h1 className="text-4xl sm:text-5xl font-bold text-brand-navy tracking-tight mb-4">
+            <h1 className="text-4xl sm:text-5xl font-bold font-heading text-brand-navy tracking-tight mb-4">
               Simple pricing. <span className="text-brand-navy">Powerful features.</span>
             </h1>
             <p className="text-base text-text-muted leading-relaxed max-w-lg mx-auto mb-8">
@@ -162,7 +162,7 @@ export default function PricingPage() {
       <section className="py-16 lg:py-24 bg-white">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <SmoothScrollReveal>
-            <h2 className="text-2xl sm:text-3xl font-bold text-brand-navy tracking-tight text-center mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold font-heading text-brand-navy tracking-tight text-center mb-12">
               Full feature comparison
             </h2>
           </SmoothScrollReveal>
@@ -186,7 +186,7 @@ export default function PricingPage() {
       <section className="py-16 lg:py-24">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <SmoothScrollReveal>
-            <h2 className="text-2xl sm:text-3xl font-bold text-brand-navy tracking-tight text-center mb-4">
+            <h2 className="text-2xl sm:text-3xl font-bold font-heading text-brand-navy tracking-tight text-center mb-4">
               Which plan is right for you?
             </h2>
             <p className="text-base text-text-muted text-center mb-12 max-w-lg mx-auto">
@@ -215,7 +215,7 @@ export default function PricingPage() {
       <section className="py-16 lg:py-24 bg-white">
         <div className="max-w-3xl mx-auto px-6 lg:px-8">
           <SmoothScrollReveal>
-            <h2 className="text-2xl sm:text-3xl font-bold text-brand-navy tracking-tight text-center mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold font-heading text-brand-navy tracking-tight text-center mb-12">
               Billing FAQ
             </h2>
           </SmoothScrollReveal>
@@ -250,7 +250,7 @@ export default function PricingPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-brand-navy/10 via-transparent to-transparent pointer-events-none" />
         <div className="max-w-3xl mx-auto px-6 lg:px-8 text-center relative">
           <SmoothScrollReveal>
-            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-4">
+            <h2 className="text-2xl sm:text-3xl font-bold font-heading text-white tracking-tight mb-4">
               Still not sure?
             </h2>
             <p className="text-base text-white/60 leading-relaxed mb-8 max-w-lg mx-auto">

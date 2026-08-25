@@ -233,7 +233,7 @@ export default function SettingsPage() {
         <div className="flex lg:hidden gap-1 overflow-x-auto pb-2 w-full">
           {TABS.map((tab) => (
             <button key={tab.id} onClick={() => { setActiveTab(tab.id); setSearchParams({ tab: tab.id }) }}
-              className={cn('shrink-0 px-4 py-2 text-sm font-medium rounded-lg transition-colors', activeTab === tab.id ? 'bg-brand-navy/5 text-brand-navy' : 'text-muted-foreground hover:text-text')}>
+              className={cn('shrink-0 px-4 py-2 text-sm font-medium rounded-lg transition-colors relative', activeTab === tab.id ? 'bg-brand-navy/5 text-brand-navy after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:rounded-full after:bg-brand-navy' : 'text-muted-foreground hover:text-text')}>
               {tab.label}
             </button>
           ))}

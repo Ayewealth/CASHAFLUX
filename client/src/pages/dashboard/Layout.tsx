@@ -2,6 +2,7 @@ import { useState, useEffect, createContext, useContext } from 'react'
 import { Outlet } from 'react-router'
 import Sidebar from '../../components/dashboard/Sidebar'
 import Topbar from '../../components/dashboard/Topbar'
+import MobileFAB from '../../components/dashboard/MobileFAB'
 import { usePageMeta } from '@/lib/usePageMeta'
 
 interface ThemeContextType {
@@ -42,7 +43,7 @@ export default function Layout() {
 
   return (
     <ThemeContext.Provider value={{ dark, setDark }}>
-      <div className="flex h-screen overflow-hidden bg-bg"> {/* Fixed height, hide global overflow */}
+      <div className="flex h-screen overflow-hidden bg-bg dashboard-shell"> {/* Fixed height, hide global overflow */}
         <Sidebar
           collapsed={collapsed}
           onToggle={handleSidebarToggle} // Pass the toggle function
@@ -56,6 +57,7 @@ export default function Layout() {
             <Outlet />
           </main>
         </div>
+      <MobileFAB />
       </div>
     </ThemeContext.Provider>
   )

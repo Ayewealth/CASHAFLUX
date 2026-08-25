@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { authClient } from '@/lib/auth-client'
 import { useAuthRedirect } from '@/lib/useAuthRedirect'
 import { Button } from '@/components/ui/button'
@@ -32,6 +32,8 @@ function getPasswordStrength(password: string): { score: number; label: string; 
 
 export default function SignupPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const inviteToken = searchParams.get('invite')
   const { isPending, hasSession } = useAuthRedirect()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -41,7 +43,20 @@ export default function SignupPage() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [inviteInfo, setInviteInfo] = useState<{ orgName: string } | null>(null)
+
   usePageMeta({ title: 'Create Account', description: 'Create your free Cashaflux account. No credit card required. Start invoicing and tracking expenses today.' })
+
+  useEffect(() => {
+    if (inviteToken) {
+      fetch(`/api/invitations/info?token=${inviteToken}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.orgName) setInviteInfo({ orgName: data.orgName })
+        })
+        .catch(() => {})
+    }
+  }, [inviteToken])
 
   const strength = getPasswordStrength(password)
 
@@ -75,19 +90,28 @@ export default function SignupPage() {
       setError(result.error.message || 'Sign up failed')
       return
     }
-    navigate(`/verify-email?email=${encodeURIComponent(email)}`)
+    if (inviteToken) {
+      navigate(`/dashboard?invite=${inviteToken}`, { replace: true })
+    } else {
+      navigate(`/verify-email?email=${encodeURIComponent(email)}`)
+    }
   }
 
   return (
     <AuthLayout
-      heading="Create your account"
-      subheading="Start with our free plan. Upgrade anytime."
+      heading={inviteToken ? 'Join the organization' : 'Create your account'}
+      subheading={inviteToken ? 'Create an account to accept the invitation.' : 'Start with our free plan. Upgrade anytime.'}
       brandContent={{
         headline: 'Start managing your finances today',
         body: 'Create an account in under a minute. No credit card required for the free plan. Invoice clients, track expenses, and stay on top of your tax obligations.',
         badges: ['Send invoices', 'Track expenses', 'Manage team'],
       }}
     >
+      {inviteInfo && (
+        <div className="mb-4 p-3 rounded-xl bg-brand-blue-light border border-brand-blue/20 text-sm text-brand-navy font-medium">
+          You've been invited to join <strong>{inviteInfo.orgName}</strong>. Create an account to accept.
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="name" className="text-sm font-medium">Full name</Label>
@@ -219,7 +243,7 @@ export default function SignupPage() {
 
       <p className="mt-8 text-center text-sm text-text-muted">
         Already have an account?{' '}
-        <Link to="/login" className="text-accent font-medium hover:underline">Sign in</Link>
+        <Link to={inviteToken ? `/login?invite=${inviteToken}` : '/login'} className="text-accent font-medium hover:underline">Sign in</Link>
       </p>
     </AuthLayout>
   )

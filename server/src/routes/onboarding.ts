@@ -3,7 +3,6 @@ import { requireAuth } from '../middleware/auth'
 import { db } from '../db/client'
 import { organizations, orgMembers, onboardingProgress } from '@shared/schema'
 import { eq } from 'drizzle-orm'
-import { getUserOrg } from '../lib/org'
 import { encrypt } from '../lib/encryption'
 import { sanitizeObject } from '../lib/sanitize'
 
@@ -14,11 +13,17 @@ router.use(requireAuth)
 // GET /api/onboarding/status — check if the user has completed onboarding
 router.get('/status', async (req, res) => {
   try {
-    const org = await db.query.organizations.findFirst({
-      where: (orgs, { eq }) => eq(orgs.ownerUserId, req.user!.id),
-      columns: { id: true },
+    const member = await db.query.orgMembers.findFirst({
+      where: (om, { eq }) => eq(om.userId, req.user!.id),
+      columns: { orgId: true, role: true },
     })
-    res.json({ onboarded: !!org, orgId: org?.id ?? null })
+    const ownerOrg = member?.role === 'owner'
+      ? member
+      : await db.query.orgMembers.findFirst({
+          where: (om, { and, eq }) => and(eq(om.userId, req.user!.id), eq(om.role, 'owner')),
+          columns: { orgId: true },
+        })
+    res.json({ onboarded: !!member, hasOwnOrg: !!ownerOrg, orgCount: member ? 1 : 0 })
   } catch {
     res.status(500).json({ error: 'Failed to check onboarding status' })
   }
@@ -139,8 +144,7 @@ router.put('/:orgId', async (req, res) => {
   } = req.body
 
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg || userOrg.orgId !== orgId) {
+    if (!req.orgId || req.orgId !== orgId) {
       res.status(404).json({ error: 'Organization not found' })
       return
     }
@@ -182,15 +186,14 @@ router.put('/currency', async (req, res) => {
   }
 
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     await db.update(organizations)
       .set({ currency })
-      .where(eq(organizations.id, userOrg.orgId))
+      .where(eq(organizations.id, req.orgId))
 
     res.json({ currency })
   } catch {

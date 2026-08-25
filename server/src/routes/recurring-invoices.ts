@@ -1,22 +1,21 @@
 import { Router } from 'express'
-import { requireAuth } from '../middleware/auth'
+import { requireAuth, requirePlan } from '../middleware/auth'
 import { db } from '../db/client'
 import { recurringInvoices, invoices, invoiceLineItems, insertRecurringInvoiceSchema } from '@shared/schema'
 import { and, eq, lte } from 'drizzle-orm'
-import { getUserOrg } from '../lib/org'
 
 const router = Router()
 router.use(requireAuth)
+router.use(requirePlan('pro', 'business'))
 
 router.get('/', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
     const rows = await db.query.recurringInvoices.findMany({
-      where: (r, { eq }) => eq(r.orgId, userOrg.orgId),
+      where: (r, { eq }) => eq(r.orgId, req.orgId),
       orderBy: (r, { desc }) => [desc(r.createdAt)],
     })
     res.json(rows)
@@ -27,8 +26,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
@@ -42,7 +40,7 @@ router.post('/', async (req, res) => {
     const [ri] = await db.insert(recurringInvoices).values({
       ...parsed.data,
       id: crypto.randomUUID(),
-      orgId: userOrg.orgId,
+      orgId: req.orgId,
     }).returning()
 
     res.status(201).json(ri)
@@ -53,13 +51,12 @@ router.post('/', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
     const existing = await db.query.recurringInvoices.findFirst({
-      where: (r, { and, eq }) => and(eq(r.id, req.params.id), eq(r.orgId, userOrg.orgId)),
+      where: (r, { and, eq }) => and(eq(r.id, req.params.id), eq(r.orgId, req.orgId)),
     })
     if (!existing) {
       res.status(404).json({ error: 'Recurring invoice not found' })
@@ -74,15 +71,14 @@ router.delete('/:id', async (req, res) => {
 
 router.post('/process', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const now = new Date()
     const due = await db.query.recurringInvoices.findMany({
-      where: (r, { and, eq }) => and(eq(r.orgId, userOrg.orgId), eq(r.active, true), lte(r.nextDate, now)),
+      where: (r, { and, eq }) => and(eq(r.orgId, req.orgId), eq(r.active, true), lte(r.nextDate, now)),
     })
 
     const FREQUENCY_DAYS: Record<string, number> = {
@@ -103,7 +99,7 @@ router.post('/process', async (req, res) => {
       const newId = crypto.randomUUID()
       await db.insert(invoices).values({
         id: newId,
-        orgId: userOrg.orgId,
+        orgId: req.orgId,
         clientId: template.clientId,
         invoiceNumber: `INV-${String(Date.now()).slice(-4)}`,
         status: 'draft',

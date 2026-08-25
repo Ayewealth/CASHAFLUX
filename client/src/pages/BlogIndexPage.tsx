@@ -57,7 +57,7 @@ export default function BlogIndexPage() {
       <section className="pt-32 pb-16 lg:pt-40 lg:pb-20 text-center">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <SmoothScrollReveal>
-            <h1 className="text-4xl sm:text-5xl font-bold text-brand-navy tracking-tight mb-4">
+            <h1 className="text-4xl sm:text-5xl font-bold font-heading text-brand-navy tracking-tight mb-4">
               Insights for your small business
             </h1>
             <p className="text-base text-text-muted leading-relaxed max-w-lg mx-auto mb-6">
@@ -86,7 +86,7 @@ export default function BlogIndexPage() {
                     <span className="inline-flex px-2.5 py-0.5 text-[10px] font-mono font-semibold text-brand-navy bg-white/80 rounded-full mb-4">
                       Featured
                     </span>
-                    <h2 className="text-2xl lg:text-3xl font-bold text-brand-navy mb-3 group-hover:text-brand-navy transition-colors">
+                    <h2 className="text-2xl lg:text-3xl font-bold font-heading text-brand-navy mb-3 group-hover:text-brand-navy transition-colors">
                       {featured.title}
                     </h2>
                     {featured.excerpt && (
@@ -164,7 +164,7 @@ export default function BlogIndexPage() {
             <div className="p-8 lg:p-10 rounded-2xl bg-brand-navy text-center relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-brand-navy/10 via-transparent to-transparent pointer-events-none" />
               <div className="relative">
-                <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight mb-2">
+                <h2 className="text-xl sm:text-2xl font-bold font-heading text-white tracking-tight mb-2">
                   Get weekly business tips
                 </h2>
                 <p className="text-sm text-white/60 mb-6 max-w-sm mx-auto">
@@ -185,7 +185,7 @@ export default function BlogIndexPage() {
       <section className="pb-20 lg:pb-28">
         <div className="max-w-3xl mx-auto px-6 lg:px-8 text-center">
           <SmoothScrollReveal>
-            <h2 className="text-2xl sm:text-3xl font-bold text-brand-navy tracking-tight mb-4">
+            <h2 className="text-2xl sm:text-3xl font-bold font-heading text-brand-navy tracking-tight mb-4">
               Ready to put these tips into action?
             </h2>
             <p className="text-base text-text-muted leading-relaxed mb-6 max-w-lg mx-auto">

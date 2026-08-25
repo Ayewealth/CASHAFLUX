@@ -1,23 +1,22 @@
 import { Router } from 'express'
-import { requireAuth, requireRole } from '../middleware/auth'
+import { requireAuth, requirePlan } from '../middleware/auth'
 import { db } from '../db/client'
 import { payrollEntries, expenses, insertPayrollEntrySchema } from '@shared/schema'
 import { and, eq, gte, lte, sql } from 'drizzle-orm'
-import { getUserOrg } from '../lib/org'
 
 const router = Router()
 router.use(requireAuth)
+router.use(requirePlan('business'))
 
 router.get('/', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) { res.status(404).json({ error: 'No organization found' }); return }
+    if (!req.orgId) { res.status(404).json({ error: 'No organization found' }); return }
     const year = parseInt((req.query as any).year) || new Date().getFullYear()
     const yearStart = new Date(year, 0, 1)
     const yearEnd = new Date(year, 11, 31)
 
     const rows = await db.query.payrollEntries.findMany({
-      where: (p, { and, eq }) => and(eq(p.orgId, userOrg.orgId), gte(p.payDate, yearStart), lte(p.payDate, yearEnd)),
+      where: (p, { and, eq }) => and(eq(p.orgId, req.orgId), gte(p.payDate, yearStart), lte(p.payDate, yearEnd)),
       orderBy: (p, { desc }) => [desc(p.payDate)],
     })
     const totalEmployees = [...new Set(rows.map(r => r.name))].length
@@ -32,19 +31,18 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) { res.status(404).json({ error: 'No organization found' }); return }
+    if (!req.orgId) { res.status(404).json({ error: 'No organization found' }); return }
     const parsed = insertPayrollEntrySchema.safeParse(req.body)
     if (!parsed.success) { res.status(400).json({ error: 'Invalid request body', details: parsed.error.flatten() }); return }
 
     const [entry] = await db.insert(payrollEntries).values({
-      ...parsed.data, id: crypto.randomUUID(), orgId: userOrg.orgId, createdBy: req.user!.id,
+      ...parsed.data, id: crypto.randomUUID(), orgId: req.orgId, createdBy: req.user!.id,
     }).returning()
 
     // Auto-post to Wages expense if status is paid
     if (parsed.data.status === 'paid') {
       await db.insert(expenses).values({
-        id: crypto.randomUUID(), orgId: userOrg.orgId, date: new Date(), merchant: 'Payroll', amount: parsed.data.grossAmount,
+        id: crypto.randomUUID(), orgId: req.orgId, date: new Date(), merchant: 'Payroll', amount: parsed.data.grossAmount,
         category: 'Wages', description: `Payroll: ${parsed.data.name}`, reconciled: false, createdBy: req.user!.id,
       })
     }
@@ -55,9 +53,8 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) { res.status(404).json({ error: 'No organization found' }); return }
-    const existing = await db.query.payrollEntries.findFirst({ where: (p, { and, eq }) => and(eq(p.id, req.params.id), eq(p.orgId, userOrg.orgId)) })
+    if (!req.orgId) { res.status(404).json({ error: 'No organization found' }); return }
+    const existing = await db.query.payrollEntries.findFirst({ where: (p, { and, eq }) => and(eq(p.id, req.params.id), eq(p.orgId, req.orgId)) })
     if (!existing) { res.status(404).json({ error: 'Payroll entry not found' }); return }
     const parsed = insertPayrollEntrySchema.partial().safeParse(req.body)
     if (!parsed.success) { res.status(400).json({ error: 'Invalid request body', details: parsed.error.flatten() }); return }
@@ -68,9 +65,8 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) { res.status(404).json({ error: 'No organization found' }); return }
-    const existing = await db.query.payrollEntries.findFirst({ where: (p, { and, eq }) => and(eq(p.id, req.params.id), eq(p.orgId, userOrg.orgId)) })
+    if (!req.orgId) { res.status(404).json({ error: 'No organization found' }); return }
+    const existing = await db.query.payrollEntries.findFirst({ where: (p, { and, eq }) => and(eq(p.id, req.params.id), eq(p.orgId, req.orgId)) })
     if (!existing) { res.status(404).json({ error: 'Payroll entry not found' }); return }
     await db.delete(payrollEntries).where(eq(payrollEntries.id, req.params.id))
     res.json({ ok: true })
@@ -79,11 +75,10 @@ router.delete('/:id', async (req, res) => {
 
 router.get('/export/csv', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) { res.status(404).json({ error: 'No organization found' }); return }
+    if (!req.orgId) { res.status(404).json({ error: 'No organization found' }); return }
     const year = parseInt((req.query as any).year) || new Date().getFullYear()
     const rows = await db.query.payrollEntries.findMany({
-      where: (p, { and, eq }) => and(eq(p.orgId, userOrg.orgId), gte(p.payDate, new Date(year, 0, 1)), lte(p.payDate, new Date(year, 11, 31))),
+      where: (p, { and, eq }) => and(eq(p.orgId, req.orgId), gte(p.payDate, new Date(year, 0, 1)), lte(p.payDate, new Date(year, 11, 31))),
       orderBy: (p, { desc }) => [desc(p.payDate)],
     })
     const header = 'Name,Type,Pay Date,Gross Pay,Hours\n'

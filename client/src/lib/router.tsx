@@ -67,6 +67,7 @@ export const router = createBrowserRouter([
           { path: 'payroll', lazy: () => import('../pages/dashboard/PayrollPage').then((m) => ({ Component: m.default })), errorElement: <ErrorFallback /> },
           { path: 'team', lazy: () => import('../pages/dashboard/TeamPage').then((m) => ({ Component: m.default })), errorElement: <ErrorFallback /> },
           { path: 'settings', lazy: () => import('../pages/dashboard/SettingsPage').then((m) => ({ Component: m.default })), errorElement: <ErrorFallback /> },
+          { path: 'activity', lazy: () => import('../pages/dashboard/ActivityPage').then((m) => ({ Component: m.default })), errorElement: <ErrorFallback /> },
         ],
       },
     ],

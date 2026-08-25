@@ -4,7 +4,6 @@ import { requireAuth } from '../middleware/auth'
 import { db } from '../db/client'
 import { expenses, expenseAllocations, insertExpenseSchema, insertExpenseAllocationSchema } from '@shared/schema'
 import { and, eq, gte, lte, inArray, sql } from 'drizzle-orm'
-import { getUserOrg } from '../lib/org'
 import { uploadFile } from '../lib/r2'
 import { z } from 'zod'
 
@@ -26,14 +25,13 @@ const updateExpenseSchema = insertExpenseSchema.partial().extend({
 
 router.get('/', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const filters = req.query as Record<string, string | undefined>
-    const conditions = [eq(expenses.orgId, userOrg.orgId)]
+    const conditions = [eq(expenses.orgId, req.orgId)]
 
     if (filters.category) {
       conditions.push(eq(expenses.category, filters.category))
@@ -74,8 +72,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
@@ -92,7 +89,7 @@ router.post('/', async (req, res) => {
     const [expense] = await db.insert(expenses).values({
       ...expenseData,
       id: expenseId,
-      orgId: userOrg.orgId,
+      orgId: req.orgId,
       createdBy: req.user!.id,
     }).returning()
 
@@ -114,14 +111,13 @@ router.post('/', async (req, res) => {
 
 router.get('/export/csv', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const filters = req.query as Record<string, string | undefined>
-    const conditions = [eq(expenses.orgId, userOrg.orgId)]
+    const conditions = [eq(expenses.orgId, req.orgId)]
 
     if (filters.category) conditions.push(eq(expenses.category, filters.category))
     if (filters.dateFrom) conditions.push(gte(expenses.date, new Date(filters.dateFrom)))
@@ -147,8 +143,7 @@ router.get('/export/csv', async (req, res) => {
 
 router.post('/bulk-delete', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
@@ -159,7 +154,7 @@ router.post('/bulk-delete', async (req, res) => {
       return
     }
 
-    await db.delete(expenses).where(and(eq(expenses.orgId, userOrg.orgId), inArray(expenses.id, ids)))
+    await db.delete(expenses).where(and(eq(expenses.orgId, req.orgId), inArray(expenses.id, ids)))
 
     res.json({ ok: true })
   } catch {
@@ -169,14 +164,13 @@ router.post('/bulk-delete', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const expense = await db.query.expenses.findFirst({
-      where: (e, { and, eq }) => and(eq(e.id, req.params.id), eq(e.orgId, userOrg.orgId)),
+      where: (e, { and, eq }) => and(eq(e.id, req.params.id), eq(e.orgId, req.orgId)),
     })
     if (!expense) {
       res.status(404).json({ error: 'Expense not found' })
@@ -195,14 +189,13 @@ router.get('/:id', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const existing = await db.query.expenses.findFirst({
-      where: (e, { and, eq }) => and(eq(e.id, req.params.id), eq(e.orgId, userOrg.orgId)),
+      where: (e, { and, eq }) => and(eq(e.id, req.params.id), eq(e.orgId, req.orgId)),
     })
     if (!existing) {
       res.status(404).json({ error: 'Expense not found' })
@@ -246,14 +239,13 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const existing = await db.query.expenses.findFirst({
-      where: (e, { and, eq }) => and(eq(e.id, req.params.id), eq(e.orgId, userOrg.orgId)),
+      where: (e, { and, eq }) => and(eq(e.id, req.params.id), eq(e.orgId, req.orgId)),
     })
     if (!existing) {
       res.status(404).json({ error: 'Expense not found' })
@@ -269,8 +261,7 @@ router.delete('/:id', async (req, res) => {
 
 router.post('/:id/receipt', upload.single('file'), async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
@@ -278,7 +269,7 @@ router.post('/:id/receipt', upload.single('file'), async (req, res) => {
     const expenseId = req.params.id as string
 
     const existing = await db.query.expenses.findFirst({
-      where: (e, { and, eq }) => and(eq(e.id, expenseId), eq(e.orgId, userOrg.orgId)),
+      where: (e, { and, eq }) => and(eq(e.id, expenseId), eq(e.orgId, req.orgId)),
     })
     if (!existing) {
       res.status(404).json({ error: 'Expense not found' })
@@ -290,7 +281,7 @@ router.post('/:id/receipt', upload.single('file'), async (req, res) => {
       return
     }
 
-    const key = await uploadFile(userOrg.orgId, 'receipts', req.file.buffer, req.file.mimetype)
+    const key = await uploadFile(req.orgId, 'receipts', req.file.buffer, req.file.mimetype)
     if (!key) {
       res.status(503).json({ error: 'File upload is not configured' })
       return

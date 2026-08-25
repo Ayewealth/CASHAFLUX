@@ -8,11 +8,23 @@
 @import "@fontsource/geist-mono/400.css";
 @import "@fontsource/geist-mono/500.css";
 @import "@fontsource/geist-mono/600.css";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@import "@fontsource/sora/400.css";
+@import "@fontsource/sora/600.css";
+@import "@fontsource/sora/700.css";
+@import "@fontsource/plus-jakarta-sans/400.css";
+@import "@fontsource/plus-jakarta-sans/500.css";
+@import "@fontsource/plus-jakarta-sans/600.css";
+@import "@fontsource/plus-jakarta-sans/700.css";
 
 @custom-variant dark (&:is([data-mode="dark"] *));
 
 @theme {
-  --font-sans: 'Geist', system-ui, sans-serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-heading: 'Sora', system-ui, sans-serif;
   --font-mono: 'Geist Mono', monospace;
 
   --color-brand-navy: #1E3A5F;
@@ -113,8 +125,8 @@
 }
 
 @theme inline {
-  --font-heading: var(--font-sans);
-  --font-sans: 'Geist', system-ui, sans-serif;
+  --font-heading: var(--font-heading);
+  --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'Geist Mono', monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -165,5 +177,15 @@
   }
   html {
     @apply font-sans;
+  }
+  .dashboard-shell {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }

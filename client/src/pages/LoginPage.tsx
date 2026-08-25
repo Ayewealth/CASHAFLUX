@@ -1,23 +1,39 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { authClient } from '@/lib/auth-client'
 import { useAuthRedirect } from '@/lib/useAuthRedirect'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Lock, Mail } from 'lucide-react'
+import { Lock, Mail, CheckSquare } from 'lucide-react'
 import { AuthLayout } from '@/components/AuthLayout'
 import { usePageMeta } from '@/lib/usePageMeta'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const inviteToken = searchParams.get('invite')
   const { isPending, hasSession } = useAuthRedirect()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(() => localStorage.getItem('rememberMe') === 'true')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [inviteInfo, setInviteInfo] = useState<{ orgName: string } | null>(null)
 
   usePageMeta({ title: 'Sign In', description: 'Sign in to your Cashaflux account to manage invoices, expenses, and financial reports.' })
+
+  useEffect(() => {
+    if (inviteToken) {
+      fetch(`/api/invitations/info?token=${inviteToken}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.orgName) setInviteInfo({ orgName: data.orgName })
+        })
+        .catch(() => {})
+    }
+  }, [inviteToken])
+
   if (isPending) {
     return (
       <div className="min-h-[100dvh] flex bg-bg items-center justify-center">
@@ -38,19 +54,28 @@ export default function LoginPage() {
       setError('Invalid email or password')
       return
     }
-    navigate('/onboarding', { replace: true })
+    if (inviteToken) {
+      navigate(`/dashboard?invite=${inviteToken}`, { replace: true })
+    } else {
+      navigate('/onboarding', { replace: true })
+    }
   }
 
   return (
     <AuthLayout
       heading="Welcome back"
-      subheading="Sign in to manage your invoices and finances."
+      subheading={inviteToken ? 'Sign in to join the organization' : 'Sign in to manage your invoices and finances.'}
       brandContent={{
         headline: 'Invoicing that keeps your cash flowing',
         body: 'Send professional invoices, track expenses, and manage finances. Built for freelancers and small teams who need to get paid faster.',
         badges: ['SOC 2 compliant', 'Bank-level encryption'],
       }}
     >
+      {inviteInfo && (
+        <div className="mb-4 p-3 rounded-xl bg-brand-blue-light border border-brand-blue/20 text-sm text-brand-navy font-medium">
+          You've been invited to join <strong>{inviteInfo.orgName}</strong>. Sign in to accept.
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="email" className="text-sm font-medium">Email</Label>
@@ -89,6 +114,12 @@ export default function LoginPage() {
           </div>
         </div>
 
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" checked={rememberMe} onChange={(e) => { setRememberMe(e.target.checked); localStorage.setItem('rememberMe', String(e.target.checked)) }}
+            className="w-4 h-4 rounded border-border text-brand-navy focus:ring-brand-navy/20" />
+          <span className="text-sm text-text-muted">Remember me</span>
+        </label>
+
         {error && (
           <div className="text-sm text-danger flex items-center gap-1.5" role="alert">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
@@ -107,7 +138,7 @@ export default function LoginPage() {
 
       <p className="mt-8 text-center text-sm text-text-muted">
         Don't have an account?{' '}
-        <Link to="/signup" className="text-accent font-medium hover:underline">Create one</Link>
+        <Link to={inviteToken ? `/signup?invite=${inviteToken}` : '/signup'} className="text-accent font-medium hover:underline">Create one</Link>
       </p>
     </AuthLayout>
   )

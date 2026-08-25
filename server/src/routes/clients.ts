@@ -1,23 +1,22 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware/auth'
 import { db } from '../db/client'
-import { clients, insertClientSchema } from '@shared/schema'
-import { and, eq } from 'drizzle-orm'
-import { getUserOrg } from '../lib/org'
+import { clients, users, insertClientSchema } from '@shared/schema'
+import { and, eq, sql } from 'drizzle-orm'
+import { isAtLimit, planLimitResponse } from '../lib/limits'
 
 const router = Router()
 router.use(requireAuth)
 
 router.get('/', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const rows = await db.query.clients.findMany({
-      where: (c, { and, eq }) => and(eq(c.orgId, userOrg.orgId), eq(c.archived, false)),
+      where: (c, { and, eq }) => and(eq(c.orgId, req.orgId), eq(c.archived, false)),
       orderBy: (c, { desc }) => [desc(c.createdAt)],
     })
     res.json(rows)
@@ -28,10 +27,20 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
+    }
+
+    const clientCount = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(clients)
+      .where(and(eq(clients.orgId, req.orgId), eq(clients.archived, false)))
+      .then(r => Number(r[0]?.count ?? 0))
+
+    const user = await db.query.users.findFirst({ where: (u, {eq}) => eq(u.id, req.user!.id) })
+    if (isAtLimit({ current: clientCount, limit: 5, plan: user?.plan ?? 'free', resource: 'clients' })) {
+      return planLimitResponse(res, { current: clientCount, limit: 5, plan: user?.plan ?? 'free', resource: 'clients' })
     }
 
     const parsed = insertClientSchema.safeParse(req.body)
@@ -43,7 +52,7 @@ router.post('/', async (req, res) => {
     const [client] = await db.insert(clients).values({
       ...parsed.data,
       id: crypto.randomUUID(),
-      orgId: userOrg.orgId,
+      orgId: req.orgId,
     }).returning()
 
     res.status(201).json(client)
@@ -54,14 +63,13 @@ router.post('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const client = await db.query.clients.findFirst({
-      where: (c, { and, eq }) => and(eq(c.id, req.params.id), eq(c.orgId, userOrg.orgId)),
+      where: (c, { and, eq }) => and(eq(c.id, req.params.id), eq(c.orgId, req.orgId)),
     })
     if (!client) {
       res.status(404).json({ error: 'Client not found' })
@@ -76,14 +84,13 @@ router.get('/:id', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const existing = await db.query.clients.findFirst({
-      where: (c, { and, eq }) => and(eq(c.id, req.params.id), eq(c.orgId, userOrg.orgId)),
+      where: (c, { and, eq }) => and(eq(c.id, req.params.id), eq(c.orgId, req.orgId)),
     })
     if (!existing) {
       res.status(404).json({ error: 'Client not found' })
@@ -109,14 +116,13 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const existing = await db.query.clients.findFirst({
-      where: (c, { and, eq }) => and(eq(c.id, req.params.id), eq(c.orgId, userOrg.orgId)),
+      where: (c, { and, eq }) => and(eq(c.id, req.params.id), eq(c.orgId, req.orgId)),
     })
     if (!existing) {
       res.status(404).json({ error: 'Client not found' })

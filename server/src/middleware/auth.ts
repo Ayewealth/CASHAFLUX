@@ -1,9 +1,15 @@
 import { type Request, type Response, type NextFunction } from 'express'
 import { auth } from '../auth'
-import { getUserOrg } from '../lib/org'
+import { getUserOrg, getUserOrgs } from '../lib/org'
 import { db } from '../db/client'
 import { users } from '@shared/schema'
 import { eq } from 'drizzle-orm'
+
+function parseCookie(cookie: string | undefined, name: string): string | undefined {
+  if (!cookie) return undefined
+  const match = cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`))
+  return match ? decodeURIComponent(match[1]) : undefined
+}
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const session = await auth.api.getSession({
@@ -15,6 +21,17 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   }
   req.user = session.user
   req.session = session.session
+  // Resolve the active org from cookie or first membership
+  const orgs = await getUserOrgs(req.user.id)
+  if (orgs.length > 0) {
+    const selectedOrgId = parseCookie(req.headers.cookie, 'cashaflux_org')
+    const active = selectedOrgId ? orgs.find(o => o.orgId === selectedOrgId) : undefined
+    req.orgId = (active ?? orgs[0]).orgId
+    req.orgRole = (active ?? orgs[0]).role
+  } else {
+    req.orgId = ''
+    req.orgRole = ''
+  }
   next()
 }
 
@@ -24,8 +41,7 @@ export function requireRole(...roles: string[]) {
       res.status(401).json({ error: 'Unauthorized' })
       return
     }
-    const userOrg = await getUserOrg(req.user.id)
-    if (!userOrg || !roles.includes(userOrg.role)) {
+    if (!req.orgRole || !roles.includes(req.orgRole)) {
       res.status(403).json({ error: 'Forbidden' })
       return
     }

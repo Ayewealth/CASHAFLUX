@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AlertTriangle, Calendar, FileText, Download, ChevronDown, ChevronUp } from 'lucide-react'
+import { AlertTriangle, Calendar, FileText, Download, ChevronDown, ChevronUp, TrendingUp, TrendingDown } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table'
@@ -80,6 +80,43 @@ export default function TaxCentrePage() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Income vs Expenses Visual Bar */}
+      {data && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-brand-navy/5 flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-brand-navy" />
+              </div>
+              <CardTitle className="text-sm font-semibold text-text">Income vs Expenses — {year}</CardTitle>
+            </div>
+            <span className="text-xs text-text-muted">Net: <strong className={data.netIncome >= 0 ? 'text-success' : 'text-danger'}>{fmt(data.netIncome)}</strong></span>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div>
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="text-text-muted">Income</span>
+                  <span className="font-semibold text-success">{fmt(data.totalIncome)}</span>
+                </div>
+                <div className="h-3 rounded-full bg-surface overflow-hidden">
+                  <div className="h-full rounded-full bg-success transition-all" style={{ width: `${Math.min((data.totalIncome / (data.totalIncome + data.totalExpenses || 1)) * 100, 100)}%` }} />
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="text-text-muted">Expenses</span>
+                  <span className="font-semibold text-danger">{fmt(data.totalExpenses)}</span>
+                </div>
+                <div className="h-3 rounded-full bg-surface overflow-hidden">
+                  <div className="h-full rounded-full bg-danger transition-all" style={{ width: `${Math.min((data.totalExpenses / (data.totalIncome + data.totalExpenses || 1)) * 100, 100)}%` }} />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Quarterly deadlines + 1099 section */}

@@ -20,6 +20,20 @@ import type { Expense } from '@shared/schema'
 type SortField = 'date' | 'merchant' | 'category' | 'amount'
 type SortDir = 'asc' | 'desc'
 
+const CATEGORY_COLORS = [
+  'bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-violet-500',
+  'bg-cyan-500', 'bg-orange-500', 'bg-pink-500', 'bg-teal-500', 'bg-indigo-500',
+  'bg-lime-500', 'bg-red-500', 'bg-purple-500', 'bg-sky-500',
+]
+
+function categoryColor(category: string): string {
+  let hash = 0
+  for (let i = 0; i < category.length; i++) {
+    hash = ((hash << 5) - hash) + category.charCodeAt(i)
+  }
+  return CATEGORY_COLORS[Math.abs(hash) % CATEGORY_COLORS.length]
+}
+
 export default function ExpensesPage() {
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
@@ -258,7 +272,9 @@ export default function ExpensesPage() {
                 <TableRow key={i}><TableCell colSpan={8} className="py-3"><Skeleton className="h-6 w-full" /></TableCell></TableRow>
               ))
             ) : sorted.length === 0 ? (
-              <TableRow><TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">No expenses found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="p-0 border-0">
+                <EmptyState icon={Receipt} title="No expenses found" description="Log your first expense to start tracking." action={{ label: 'Log Expense', to: '/dashboard/expenses/new' }} />
+              </TableCell></TableRow>
             ) : (
               sorted.map((exp) => (
                 <TableRow key={exp.id} className="hover:bg-muted/30">
@@ -270,7 +286,10 @@ export default function ExpensesPage() {
                   <TableCell className="text-text">{formatDate(exp.date)}</TableCell>
                   <TableCell className="font-medium text-text">{exp.merchant}</TableCell>
                   <TableCell className="text-muted-foreground hidden sm:table-cell">
-                    <span className="inline-flex items-center rounded-md bg-brand-blue-light/40 px-2 py-0.5 text-xs font-medium text-brand-navy">{exp.category}</span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full ${categoryColor(exp.category)}`} />
+                      <span className="rounded-md bg-brand-blue-light/40 px-2 py-0.5 text-xs font-medium text-brand-navy">{exp.category}</span>
+                    </span>
                   </TableCell>
                   <TableCell className="text-right font-medium text-text">{formatCurrency(exp.amount)}</TableCell>
                   <TableCell className="text-center hidden md:table-cell">

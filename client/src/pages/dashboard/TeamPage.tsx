@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MoreHorizontal, UserMinus, History, ChevronDown, ChevronUp, Users } from 'lucide-react'
+import { MoreHorizontal, UserMinus, History, ChevronDown, ChevronUp, Users, Lock } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
@@ -11,6 +11,7 @@ import { useActivityLog } from '../../features/team/hooks'
 import { toast } from '../../components/ui/toast'
 import DataTable from '../../components/dashboard/DataTable'
 import EmptyState from '../../components/dashboard/EmptyState'
+import { useSubscriptionStatus } from '../../features/subscription/hooks'
 
 const ROLE_COLORS: Record<string, string> = {
   owner: 'text-warning bg-warning/10',
@@ -26,6 +27,8 @@ export default function TeamPage() {
   const [showActivity, setShowActivity] = useState(false)
   const { data: members, isLoading } = useOrgMembers()
   const { data: activity } = useActivityLog()
+  const { data: subscription } = useSubscriptionStatus()
+  const isBusiness = subscription?.plan === 'business'
 
   async function handleInvite() {
     if (!emails.trim()) return
@@ -90,9 +93,14 @@ export default function TeamPage() {
         <CardContent>
           <div className="flex gap-2">
             <Input placeholder="email1@example.com, email2@example.com" value={emails} onChange={(e) => setEmails(e.target.value)} className="h-10 flex-1" />
-            <Button onClick={handleInvite} disabled={!emails.trim() || inviting} className="h-10">{inviting ? 'Sending...' : 'Send Invite'}</Button>
+            <Button onClick={handleInvite} disabled={!emails.trim() || inviting || !isBusiness} className="h-10">{inviting ? 'Sending...' : 'Send Invite'}</Button>
           </div>
           <p className="text-xs text-text-muted mt-2">Separate multiple emails with commas. Invites are sent via email.</p>
+          {!isBusiness && (
+            <p className="text-xs text-warning mt-2 flex items-center gap-1">
+              <Lock className="h-3 w-3" /> Team invites require the Business plan
+            </p>
+          )}
         </CardContent>
       </Card>
 

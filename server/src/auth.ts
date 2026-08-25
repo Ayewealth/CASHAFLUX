@@ -22,6 +22,12 @@ export const auth = betterAuth({
   basePath: '/api/auth',
   baseURL: env.BETTER_AUTH_URL,
   database: drizzleAdapter(db, { provider: 'pg' }),
+  advanced: {
+    ipAddress: {
+      ipAddressHeaders: ['x-forwarded-for'],
+      trustedProxies: ['::1'],
+    },
+  },
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,

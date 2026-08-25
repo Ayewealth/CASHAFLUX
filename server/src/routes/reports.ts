@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { requireAuth } from '../middleware/auth'
+import { requireAuth, requirePlan } from '../middleware/auth'
 import { db } from '../db/client'
 import {
   invoices,
@@ -11,10 +11,10 @@ import {
   mileageLogs,
 } from '@shared/schema'
 import { and, eq, gte, lte, sql } from 'drizzle-orm'
-import { getUserOrg } from '../lib/org'
 
 const router = Router()
 router.use(requireAuth)
+router.use(requirePlan('pro', 'business'))
 
 function dateRange(filters: Record<string, string | undefined>) {
   const dateFrom = filters.dateFrom ? new Date(filters.dateFrom) : new Date(new Date().getFullYear(), 0, 1)
@@ -27,12 +27,11 @@ function parseDecimal(v: string | null | undefined): number { return parseFloat(
 
 router.get('/:type', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
-    const orgId = userOrg.orgId
+    const orgId = req.orgId
     const { dateFrom, dateTo } = dateRange(req.query as Record<string, string | undefined>)
     const type = req.params.type
     let data: unknown[] = []

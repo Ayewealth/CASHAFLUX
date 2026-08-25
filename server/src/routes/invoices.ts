@@ -4,7 +4,6 @@ import { db } from '../db/client'
 import { invoices, invoiceLineItems, clients, organizations, insertInvoiceSchema, insertInvoiceLineItemSchema } from '@shared/schema'
 import { and, eq, gte, lte } from 'drizzle-orm'
 import { z } from 'zod'
-import { getUserOrg } from '../lib/org'
 import { sendTemplateEmail, loadTemplate, renderTemplate } from '../emails/send'
 import { renderToStream } from '@react-pdf/renderer'
 import { InvoicePDF } from '../lib/invoice-pdf'
@@ -22,14 +21,13 @@ const updateInvoiceSchema = insertInvoiceSchema.partial().extend({
 
 router.get('/', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const filters = req.query as Record<string, string | undefined>
-    const conditions = [eq(invoices.orgId, userOrg.orgId)]
+    const conditions = [eq(invoices.orgId, req.orgId)]
 
     if (filters.status) {
       conditions.push(eq(invoices.status, filters.status as typeof invoices.$inferSelect.status))
@@ -80,8 +78,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
@@ -98,7 +95,7 @@ router.post('/', async (req, res) => {
     const [invoice] = await db.insert(invoices).values({
       ...invoiceData,
       id: invoiceId,
-      orgId: userOrg.orgId,
+      orgId: req.orgId,
       createdBy: req.user!.id,
     }).returning()
 
@@ -124,14 +121,13 @@ router.post('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const invoice = await db.query.invoices.findFirst({
-      where: (i, { and, eq }) => and(eq(i.id, req.params.id), eq(i.orgId, userOrg.orgId)),
+      where: (i, { and, eq }) => and(eq(i.id, req.params.id), eq(i.orgId, req.orgId)),
     })
     if (!invoice) {
       res.status(404).json({ error: 'Invoice not found' })
@@ -150,14 +146,13 @@ router.get('/:id', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const existing = await db.query.invoices.findFirst({
-      where: (i, { and, eq }) => and(eq(i.id, req.params.id), eq(i.orgId, userOrg.orgId)),
+      where: (i, { and, eq }) => and(eq(i.id, req.params.id), eq(i.orgId, req.orgId)),
     })
     if (!existing) {
       res.status(404).json({ error: 'Invoice not found' })
@@ -208,14 +203,13 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const existing = await db.query.invoices.findFirst({
-      where: (i, { and, eq }) => and(eq(i.id, req.params.id), eq(i.orgId, userOrg.orgId)),
+      where: (i, { and, eq }) => and(eq(i.id, req.params.id), eq(i.orgId, req.orgId)),
     })
     if (!existing) {
       res.status(404).json({ error: 'Invoice not found' })
@@ -233,14 +227,13 @@ router.delete('/:id', async (req, res) => {
 
 router.post('/:id/mark-paid', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const existing = await db.query.invoices.findFirst({
-      where: (i, { and, eq }) => and(eq(i.id, req.params.id), eq(i.orgId, userOrg.orgId)),
+      where: (i, { and, eq }) => and(eq(i.id, req.params.id), eq(i.orgId, req.orgId)),
     })
     if (!existing) {
       res.status(404).json({ error: 'Invoice not found' })
@@ -264,14 +257,13 @@ router.post('/:id/mark-paid', async (req, res) => {
 
 router.post('/:id/send', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const invoice = await db.query.invoices.findFirst({
-      where: (i, { and, eq }) => and(eq(i.id, req.params.id), eq(i.orgId, userOrg.orgId)),
+      where: (i, { and, eq }) => and(eq(i.id, req.params.id), eq(i.orgId, req.orgId)),
     })
     if (!invoice) {
       res.status(404).json({ error: 'Invoice not found' })
@@ -287,7 +279,7 @@ router.post('/:id/send', async (req, res) => {
     }
 
     const org = await db.query.organizations.findFirst({
-      where: (o, { eq }) => eq(o.id, userOrg.orgId),
+      where: (o, { eq }) => eq(o.id, req.orgId),
     })
 
     const orgName = org?.name ?? 'Your Business'
@@ -329,14 +321,13 @@ router.post('/:id/send', async (req, res) => {
 
 router.get('/:id/pdf', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const invoice = await db.query.invoices.findFirst({
-      where: (i, { and, eq }) => and(eq(i.id, req.params.id), eq(i.orgId, userOrg.orgId)),
+      where: (i, { and, eq }) => and(eq(i.id, req.params.id), eq(i.orgId, req.orgId)),
     })
     if (!invoice) {
       res.status(404).json({ error: 'Invoice not found' })
@@ -352,7 +343,7 @@ router.get('/:id/pdf', async (req, res) => {
     })
 
     const org = await db.query.organizations.findFirst({
-      where: (o, { eq }) => eq(o.id, userOrg.orgId),
+      where: (o, { eq }) => eq(o.id, req.orgId),
     })
 
 const { default: React } = await import('react')

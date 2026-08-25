@@ -3,7 +3,6 @@ import { requireAuth } from '../middleware/auth'
 import { db } from '../db/client'
 import { expenseCategories, insertExpenseCategorySchema } from '@shared/schema'
 import { eq } from 'drizzle-orm'
-import { getUserOrg } from '../lib/org'
 import { seedDefaultExpenseCategories } from '../seed'
 
 const router = Router()
@@ -11,16 +10,15 @@ router.use(requireAuth)
 
 router.get('/', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
-    await seedDefaultExpenseCategories(userOrg.orgId)
+    await seedDefaultExpenseCategories(req.orgId)
 
     const rows = await db.query.expenseCategories.findMany({
-      where: (c, { eq }) => eq(c.orgId, userOrg.orgId),
+      where: (c, { eq }) => eq(c.orgId, req.orgId),
       orderBy: (c, { asc }) => [asc(c.name)],
     })
     res.json(rows)
@@ -31,8 +29,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
@@ -46,7 +43,7 @@ router.post('/', async (req, res) => {
     const [category] = await db.insert(expenseCategories).values({
       ...parsed.data,
       id: crypto.randomUUID(),
-      orgId: userOrg.orgId,
+      orgId: req.orgId,
     }).returning()
 
     res.status(201).json(category)
@@ -57,14 +54,13 @@ router.post('/', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const existing = await db.query.expenseCategories.findFirst({
-      where: (c, { and, eq }) => and(eq(c.id, req.params.id), eq(c.orgId, userOrg.orgId)),
+      where: (c, { and, eq }) => and(eq(c.id, req.params.id), eq(c.orgId, req.orgId)),
     })
     if (!existing) {
       res.status(404).json({ error: 'Category not found' })

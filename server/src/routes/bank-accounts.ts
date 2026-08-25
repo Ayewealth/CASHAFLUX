@@ -1,23 +1,22 @@
 import { Router } from 'express'
-import { requireAuth } from '../middleware/auth'
+import { requireAuth, requirePlan } from '../middleware/auth'
 import { db } from '../db/client'
 import { bankAccounts, bankTransactions, insertBankAccountSchema } from '@shared/schema'
 import { and, eq } from 'drizzle-orm'
-import { getUserOrg } from '../lib/org'
 
 const router = Router()
 router.use(requireAuth)
+router.use(requirePlan('pro', 'business'))
 
 router.get('/', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const rows = await db.query.bankAccounts.findMany({
-      where: (a, { eq }) => eq(a.orgId, userOrg.orgId),
+      where: (a, { eq }) => eq(a.orgId, req.orgId),
       orderBy: (a, { asc }) => [asc(a.name)],
     })
     res.json(rows)
@@ -28,8 +27,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
@@ -43,7 +41,7 @@ router.post('/', async (req, res) => {
     const [account] = await db.insert(bankAccounts).values({
       ...parsed.data,
       id: crypto.randomUUID(),
-      orgId: userOrg.orgId,
+      orgId: req.orgId,
     }).returning()
 
     res.status(201).json(account)
@@ -54,14 +52,13 @@ router.post('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const account = await db.query.bankAccounts.findFirst({
-      where: (a, { and, eq }) => and(eq(a.id, req.params.id), eq(a.orgId, userOrg.orgId)),
+      where: (a, { and, eq }) => and(eq(a.id, req.params.id), eq(a.orgId, req.orgId)),
     })
     if (!account) {
       res.status(404).json({ error: 'Bank account not found' })
@@ -76,14 +73,13 @@ router.get('/:id', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const existing = await db.query.bankAccounts.findFirst({
-      where: (a, { and, eq }) => and(eq(a.id, req.params.id), eq(a.orgId, userOrg.orgId)),
+      where: (a, { and, eq }) => and(eq(a.id, req.params.id), eq(a.orgId, req.orgId)),
     })
     if (!existing) {
       res.status(404).json({ error: 'Bank account not found' })
@@ -109,14 +105,13 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const existing = await db.query.bankAccounts.findFirst({
-      where: (a, { and, eq }) => and(eq(a.id, req.params.id), eq(a.orgId, userOrg.orgId)),
+      where: (a, { and, eq }) => and(eq(a.id, req.params.id), eq(a.orgId, req.orgId)),
     })
     if (!existing) {
       res.status(404).json({ error: 'Bank account not found' })

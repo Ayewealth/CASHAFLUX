@@ -1,12 +1,12 @@
 import { Router } from 'express'
-import { requireAuth } from '../middleware/auth'
+import { requireAuth, requirePlan } from '../middleware/auth'
 import { db } from '../db/client'
 import { invoices, expenses, expenseCategories } from '@shared/schema'
 import { and, eq, gte, lte, sql } from 'drizzle-orm'
-import { getUserOrg } from '../lib/org'
 
 const router = Router()
 router.use(requireAuth)
+router.use(requirePlan('pro', 'business'))
 
 const IRS_QUARTERLY_DATES = [
   { quarter: 'Q1', deadline: 'Apr 15', month: 4, day: 15 },
@@ -17,12 +17,11 @@ const IRS_QUARTERLY_DATES = [
 
 router.get('/summary', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
-    const orgId = userOrg.orgId
+    const orgId = req.orgId
     const year = parseInt((req.query as any).year) || new Date().getFullYear()
     const yearStart = new Date(year, 0, 1)
     const yearEnd = new Date(year, 11, 31)
@@ -69,12 +68,11 @@ router.get('/summary', async (req, res) => {
 
 router.get('/export', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
-    const orgId = userOrg.orgId
+    const orgId = req.orgId
     const year = parseInt((req.query as any).year) || new Date().getFullYear()
     const yearStart = new Date(year, 0, 1)
     const yearEnd = new Date(year, 11, 31)

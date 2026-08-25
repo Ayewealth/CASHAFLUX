@@ -3,7 +3,6 @@ import { requireAuth } from '../middleware/auth'
 import { db } from '../db/client'
 import { mileageLogs, insertMileageLogSchema } from '@shared/schema'
 import { and, eq, gte, lte } from 'drizzle-orm'
-import { getUserOrg } from '../lib/org'
 
 const router = Router()
 router.use(requireAuth)
@@ -12,14 +11,13 @@ const IRS_MILEAGE_RATE_2025 = 0.70
 
 router.get('/', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const filters = req.query as Record<string, string | undefined>
-    const conditions = [eq(mileageLogs.orgId, userOrg.orgId)]
+    const conditions = [eq(mileageLogs.orgId, req.orgId)]
 
     if (filters.dateFrom) {
       conditions.push(gte(mileageLogs.date, new Date(filters.dateFrom)))
@@ -44,8 +42,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
@@ -59,7 +56,7 @@ router.post('/', async (req, res) => {
     const [log] = await db.insert(mileageLogs).values({
       ...parsed.data,
       id: crypto.randomUUID(),
-      orgId: userOrg.orgId,
+      orgId: req.orgId,
       createdBy: req.user!.id,
     }).returning()
 
@@ -71,14 +68,13 @@ router.post('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const log = await db.query.mileageLogs.findFirst({
-      where: (m, { and, eq }) => and(eq(m.id, req.params.id), eq(m.orgId, userOrg.orgId)),
+      where: (m, { and, eq }) => and(eq(m.id, req.params.id), eq(m.orgId, req.orgId)),
     })
     if (!log) {
       res.status(404).json({ error: 'Mileage log not found' })
@@ -93,14 +89,13 @@ router.get('/:id', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const existing = await db.query.mileageLogs.findFirst({
-      where: (m, { and, eq }) => and(eq(m.id, req.params.id), eq(m.orgId, userOrg.orgId)),
+      where: (m, { and, eq }) => and(eq(m.id, req.params.id), eq(m.orgId, req.orgId)),
     })
     if (!existing) {
       res.status(404).json({ error: 'Mileage log not found' })
@@ -126,14 +121,13 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const existing = await db.query.mileageLogs.findFirst({
-      where: (m, { and, eq }) => and(eq(m.id, req.params.id), eq(m.orgId, userOrg.orgId)),
+      where: (m, { and, eq }) => and(eq(m.id, req.params.id), eq(m.orgId, req.orgId)),
     })
     if (!existing) {
       res.status(404).json({ error: 'Mileage log not found' })

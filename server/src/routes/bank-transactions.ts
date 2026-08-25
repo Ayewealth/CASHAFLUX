@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { requireAuth } from '../middleware/auth'
+import { requireAuth, requirePlan } from '../middleware/auth'
 import { db } from '../db/client'
 import {
   bankTransactions,
@@ -9,10 +9,10 @@ import {
 } from '@shared/schema'
 import { and, eq, gte, lte, sql } from 'drizzle-orm'
 import { z } from 'zod'
-import { getUserOrg } from '../lib/org'
 
 const router = Router()
 router.use(requireAuth)
+router.use(requirePlan('pro', 'business'))
 
 function normalizeDate(value: string): Date | null {
   const d = new Date(value)
@@ -21,14 +21,13 @@ function normalizeDate(value: string): Date | null {
 
 router.get('/', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const filters = req.query as Record<string, string | undefined>
-    const conditions = [eq(bankTransactions.orgId, userOrg.orgId)]
+    const conditions = [eq(bankTransactions.orgId, req.orgId)]
 
     if (filters.bankAccountId) {
       conditions.push(eq(bankTransactions.bankAccountId, filters.bankAccountId))
@@ -69,8 +68,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
@@ -84,7 +82,7 @@ router.post('/', async (req, res) => {
     const [transaction] = await db.insert(bankTransactions).values({
       ...parsed.data,
       id: crypto.randomUUID(),
-      orgId: userOrg.orgId,
+      orgId: req.orgId,
     }).returning()
 
     res.status(201).json(transaction)
@@ -98,14 +96,13 @@ router.post('/', async (req, res) => {
 
 router.get('/reconciliation-summary', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const filters = req.query as Record<string, string | undefined>
-    const conditions = [eq(bankTransactions.orgId, userOrg.orgId)]
+    const conditions = [eq(bankTransactions.orgId, req.orgId)]
 
     if (filters.bankAccountId) {
       conditions.push(eq(bankTransactions.bankAccountId, filters.bankAccountId))
@@ -182,8 +179,7 @@ function parseDate(raw: string): Date | null {
 
 router.post('/import', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
@@ -197,7 +193,7 @@ router.post('/import', async (req, res) => {
     const { bankAccountId, columnMap, rows, hasHeader } = parsed.data
 
     const account = await db.query.bankAccounts.findFirst({
-      where: (a, { and, eq }) => and(eq(a.id, bankAccountId), eq(a.orgId, userOrg.orgId)),
+      where: (a, { and, eq }) => and(eq(a.id, bankAccountId), eq(a.orgId, req.orgId)),
     })
     if (!account) {
       res.status(404).json({ error: 'Bank account not found' })
@@ -277,7 +273,7 @@ router.post('/import', async (req, res) => {
       toInsert.push({
         id: crypto.randomUUID(),
         bankAccountId,
-        orgId: userOrg.orgId,
+        orgId: req.orgId,
         date,
         description,
         amount: normalizedAmount,
@@ -308,14 +304,13 @@ router.post('/import', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const transaction = await db.query.bankTransactions.findFirst({
-      where: (t, { and, eq }) => and(eq(t.id, req.params.id), eq(t.orgId, userOrg.orgId)),
+      where: (t, { and, eq }) => and(eq(t.id, req.params.id), eq(t.orgId, req.orgId)),
     })
     if (!transaction) {
       res.status(404).json({ error: 'Bank transaction not found' })
@@ -330,14 +325,13 @@ router.get('/:id', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const existing = await db.query.bankTransactions.findFirst({
-      where: (t, { and, eq }) => and(eq(t.id, req.params.id), eq(t.orgId, userOrg.orgId)),
+      where: (t, { and, eq }) => and(eq(t.id, req.params.id), eq(t.orgId, req.orgId)),
     })
     if (!existing) {
       res.status(404).json({ error: 'Bank transaction not found' })
@@ -371,13 +365,12 @@ async function findTransaction(id: string, orgId: string) {
 
 router.post('/:id/match-invoice', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
-    const transaction = await findTransaction(req.params.id, userOrg.orgId)
+    const transaction = await findTransaction(req.params.id, req.orgId)
     if (!transaction) {
       res.status(404).json({ error: 'Bank transaction not found' })
       return
@@ -385,7 +378,7 @@ router.post('/:id/match-invoice', async (req, res) => {
 
     const { invoiceId } = z.object({ invoiceId: z.string().min(1) }).parse(req.body)
     const invoice = await db.query.invoices.findFirst({
-      where: (i, { and, eq }) => and(eq(i.id, invoiceId), eq(i.orgId, userOrg.orgId)),
+      where: (i, { and, eq }) => and(eq(i.id, invoiceId), eq(i.orgId, req.orgId)),
     })
     if (!invoice) {
       res.status(404).json({ error: 'Invoice not found' })
@@ -410,13 +403,12 @@ router.post('/:id/match-invoice', async (req, res) => {
 
 router.post('/:id/match-expense', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
-    const transaction = await findTransaction(req.params.id, userOrg.orgId)
+    const transaction = await findTransaction(req.params.id, req.orgId)
     if (!transaction) {
       res.status(404).json({ error: 'Bank transaction not found' })
       return
@@ -424,7 +416,7 @@ router.post('/:id/match-expense', async (req, res) => {
 
     const { expenseId } = z.object({ expenseId: z.string().min(1) }).parse(req.body)
     const expense = await db.query.expenses.findFirst({
-      where: (e, { and, eq }) => and(eq(e.id, expenseId), eq(e.orgId, userOrg.orgId)),
+      where: (e, { and, eq }) => and(eq(e.id, expenseId), eq(e.orgId, req.orgId)),
     })
     if (!expense) {
       res.status(404).json({ error: 'Expense not found' })
@@ -444,13 +436,12 @@ router.post('/:id/match-expense', async (req, res) => {
 
 router.post('/:id/unmatch', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
-    const transaction = await findTransaction(req.params.id, userOrg.orgId)
+    const transaction = await findTransaction(req.params.id, req.orgId)
     if (!transaction) {
       res.status(404).json({ error: 'Bank transaction not found' })
       return
@@ -469,13 +460,12 @@ router.post('/:id/unmatch', async (req, res) => {
 
 router.post('/:id/reconcile', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
-    const transaction = await findTransaction(req.params.id, userOrg.orgId)
+    const transaction = await findTransaction(req.params.id, req.orgId)
     if (!transaction) {
       res.status(404).json({ error: 'Bank transaction not found' })
       return
@@ -494,13 +484,12 @@ router.post('/:id/reconcile', async (req, res) => {
 
 router.post('/:id/unreconcile', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
-    const transaction = await findTransaction(req.params.id, userOrg.orgId)
+    const transaction = await findTransaction(req.params.id, req.orgId)
     if (!transaction) {
       res.status(404).json({ error: 'Bank transaction not found' })
       return
@@ -519,14 +508,13 @@ router.post('/:id/unreconcile', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
     const existing = await db.query.bankTransactions.findFirst({
-      where: (t, { and, eq }) => and(eq(t.id, req.params.id), eq(t.orgId, userOrg.orgId)),
+      where: (t, { and, eq }) => and(eq(t.id, req.params.id), eq(t.orgId, req.orgId)),
     })
     if (!existing) {
       res.status(404).json({ error: 'Bank transaction not found' })

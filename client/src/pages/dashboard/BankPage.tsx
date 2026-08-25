@@ -20,6 +20,7 @@ import { AddBankAccountDialog } from '../../features/bank-accounts/AddBankAccoun
 import { AddBankTransactionDialog } from '../../features/bank-transactions/AddBankTransactionDialog'
 import { ImportCSVDialog } from '../../features/bank-accounts/ImportCSVDialog'
 import { ConfirmDialog } from '../../components/dashboard/ConfirmDialog'
+import MatchPanel from '../../components/dashboard/MatchPanel'
 import { Skeleton } from '../../components/ui/skeleton'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table'
@@ -70,6 +71,7 @@ export default function BankPage() {
   const [recDateFrom, setRecDateFrom] = useState<Date | undefined>(getDefaultMonthRange().start)
   const [recDateTo, setRecDateTo] = useState<Date | undefined>(getDefaultMonthRange().end)
   const [recAccountId, setRecAccountId] = useState<string | null>(null)
+  const [matchPanel, setMatchPanel] = useState<{ txnId: string; txnAmount: string; txnDescription: string } | null>(null)
 
   const { data: accounts } = useBankAccounts()
   const { data: transactions } = useBankTransactions(selectedAccountId ? { bankAccountId: selectedAccountId, dateFrom: txnDateFrom?.toISOString(), dateTo: txnDateTo?.toISOString() } : undefined)
@@ -142,6 +144,17 @@ export default function BankPage() {
         </SelectContent>
       </Select>
     )
+  }
+
+  function getMatchCandidates(txnId: string, txnAmount: string) {
+    const amount = parseFloat(txnAmount)
+    const invCandidates = (invoices ?? []).filter((inv) => Math.abs(parseFloat(inv.total) - amount) < 0.1).map((inv) => ({
+      id: inv.id, label: inv.invoiceNumber, amount: formatCurrency(inv.total), type: 'invoice' as const, confidence: 0.95,
+    }))
+    const expCandidates = (expenses ?? []).filter((exp) => Math.abs(parseFloat(exp.amount) - amount) < 0.1).map((exp) => ({
+      id: exp.id, label: exp.merchant, amount: formatCurrency(exp.amount), type: 'expense' as const, confidence: 0.85,
+    }))
+    return [...invCandidates, ...expCandidates]
   }
 
   return (
@@ -424,9 +437,14 @@ export default function BankPage() {
                         {tx.type === 'credit' ? '+' : '-'}{formatCurrency(tx.amount)}
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-1">
-                          {renderMatchDropdown(tx.id, tx.amount)}
-                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1"
+                          onClick={() => setMatchPanel({ txnId: tx.id, txnAmount: tx.amount, txnDescription: tx.description })}
+                        >
+                          <Link2 className="h-3 w-3" /> Match
+                        </Button>
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
@@ -461,6 +479,17 @@ export default function BankPage() {
         title="Delete transaction?"
         description="This action cannot be undone."
         confirmLabel="Delete"
+      />
+
+      <MatchPanel
+        open={!!matchPanel}
+        onClose={() => setMatchPanel(null)}
+        transactionAmount={matchPanel ? formatCurrency(matchPanel.txnAmount) : ''}
+        transactionDescription={matchPanel?.txnDescription ?? ''}
+        txnId={matchPanel?.txnId ?? ''}
+        candidates={matchPanel ? getMatchCandidates(matchPanel.txnId, matchPanel.txnAmount) : []}
+        onMatchInvoice={handleMatchInvoice}
+        onMatchExpense={handleMatchExpense}
       />
     </div>
   )

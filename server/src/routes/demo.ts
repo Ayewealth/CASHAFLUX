@@ -2,7 +2,6 @@ import { Router } from 'express'
 import { nanoid } from 'nanoid'
 import { db } from '../db/client'
 import { requireAuth } from '../middleware/auth'
-import { getUserOrg } from '../lib/org'
 import {
   organizations, clients, invoices, invoiceLineItems, expenses,
   bankAccounts, bankTransactions, mileageLogs, payrollEntries,
@@ -64,11 +63,10 @@ function addMonths(date: Date, months: number): Date {
 
 router.get('/status', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) { res.status(404).json({ error: 'No organization found' }); return }
-    const org = await db.query.organizations.findFirst({ where: (o, { eq }) => eq(o.id, userOrg.orgId) })
+    if (!req.orgId) { res.status(404).json({ error: 'No organization found' }); return }
+    const org = await db.query.organizations.findFirst({ where: (o, { eq }) => eq(o.id, req.orgId) })
     const session = org?.demoMode
-      ? await db.query.demoSessions.findFirst({ where: (ds, { eq, and, isNull }) => and(eq(ds.orgId, userOrg.orgId), isNull(ds.cleanedUpAt)) })
+      ? await db.query.demoSessions.findFirst({ where: (ds, { eq, and, isNull }) => and(eq(ds.orgId, req.orgId), isNull(ds.cleanedUpAt)) })
       : null
     res.json({ demoMode: org?.demoMode ?? false, demoSessionId: session?.id ?? null })
   } catch { res.status(500).json({ error: 'Failed to check demo status' }) }
@@ -77,9 +75,8 @@ router.get('/status', async (req, res) => {
 router.post('/toggle', async (req, res) => {
   try {
     const { enabled } = req.body
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) { res.status(404).json({ error: 'No organization found' }); return }
-    const orgId = userOrg.orgId
+    if (!req.orgId) { res.status(404).json({ error: 'No organization found' }); return }
+    const orgId = req.orgId
     const userId = req.user!.id
 
     if (!enabled) {

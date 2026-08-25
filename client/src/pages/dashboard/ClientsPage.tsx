@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Search, MoreHorizontal, Mail, Phone, MapPin, Archive, Users } from 'lucide-react'
 import { Button } from '../../components/ui/button'
+import { Input } from '../../components/ui/input'
 import { useClients, useArchiveClient } from '../../features/clients/hooks'
 import { AddClientDialog } from '../../features/clients/AddClientDialog'
 import { ConfirmDialog } from '../../components/dashboard/ConfirmDialog'
@@ -9,6 +10,7 @@ import DataTable from '../../components/dashboard/DataTable'
 import ViewToggle from '../../components/dashboard/ViewToggle'
 import EmptyState from '../../components/dashboard/EmptyState'
 import PageSkeleton from '../../components/dashboard/PageSkeleton'
+import { useSubscriptionStatus } from '../../features/subscription/hooks'
 
 export default function ClientsPage() {
   const [search, setSearch] = useState('')
@@ -17,6 +19,8 @@ export default function ClientsPage() {
   const [archiveId, setArchiveId] = useState<string | null>(null)
   const { data: clients, isLoading } = useClients()
   const archiveClient = useArchiveClient()
+  const { data: subscription } = useSubscriptionStatus()
+  const isFree = (subscription?.plan ?? 'free') === 'free'
 
   const filtered = (clients ?? []).filter(
     (c) => c.name.toLowerCase().includes(search.toLowerCase()) || c.email?.toLowerCase().includes(search.toLowerCase())
@@ -46,6 +50,9 @@ export default function ClientsPage() {
         </div>
         <div className="flex items-center gap-3">
           <ViewToggle view={view} onChange={setView} />
+          {isFree && (
+            <span className="text-xs text-text-muted bg-muted rounded-full px-2.5 py-1 font-medium">Free: 5 client limit</span>
+          )}
           <Button className="gap-1.5 bg-brand-navy hover:bg-brand-navy-light" onClick={() => setShowAdd(true)}>
             <Mail className="h-4 w-4" /> Add Client
           </Button>
@@ -54,9 +61,9 @@ export default function ClientsPage() {
 
       <div className="relative flex-1 max-w-xs">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted pointer-events-none" />
-        <input
+        <Input
           type="search" placeholder="Search clients..." value={search} onChange={(e) => setSearch(e.target.value)}
-          className="h-10 w-full rounded-xl border border-border/50 bg-transparent pl-9 pr-3 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-navy/20 transition-colors"
+          className="pl-9 h-10"
         />
       </div>
 

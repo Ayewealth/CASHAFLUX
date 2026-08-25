@@ -20,6 +20,7 @@ interface BlogPost {
   excerpt: string | null
   publishedAt: string | null
   author: string | null
+  image?: string
 }
 
 function MarkdownContent({ content }: { content: string }) {
@@ -29,7 +30,7 @@ function MarkdownContent({ content }: { content: string }) {
     if (line.startsWith('## ')) {
       const text = line.slice(3)
       const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-      return <h2 key={i} id={id} className="text-xl font-bold text-brand-navy mt-8 mb-3">{text}</h2>
+      return <h2 key={i} id={id} className="text-xl font-bold font-heading text-brand-navy mt-8 mb-3">{text}</h2>
     }
     if (line.startsWith('### ')) return <h3 key={i} className="text-lg font-bold text-brand-navy mt-6 mb-2">{line.slice(4)}</h3>
     if (line.startsWith('- ')) return <li key={i} className="text-sm text-text-muted leading-relaxed ml-4 list-disc">{line.slice(2)}</li>
@@ -103,6 +104,275 @@ The IRS charges a penalty for late payments, even if you're due a refund when yo
 Cashaflux's Tax Centre includes quarterly deadline reminders, so you'll never miss a payment. Set it and forget it.
     `.trim(),
   },
+  'track-business-expenses': {
+    title: 'How to Track Business Expenses Like a Pro',
+    author: 'Sarah Mitchell',
+    date: '2026-08-05',
+    image: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80',
+    content: `
+## Why expense tracking matters
+
+Tracking business expenses is essential for accurate bookkeeping, maximizing tax deductions, and understanding your true profitability.
+
+## Use IRS Schedule C categories
+
+Cashaflux comes pre-loaded with IRS Schedule C categories including Advertising, Car & Truck, Commissions, Insurance, Legal & Professional, Office Expenses, and more.
+
+## Snap receipts on the go
+
+Use Cashaflux receipt upload feature to photograph receipts as you get them. Stored securely in the cloud, accessible from any device.
+
+## Best practices for expense tracking
+
+- Log expenses weekly, not monthly
+- Use dedicated business accounts only
+- Categorize every transaction consistently
+- Attach digital copies of all receipts over $75
+
+## Common deductible expenses
+
+- Office supplies and equipment
+- Software subscriptions (including Cashaflux!)
+- Home office deduction (if you qualify)
+- Business travel and meals (50% deductible)
+- Marketing and advertising costs
+
+By building a consistent expense tracking habit with Cashaflux, you will save hours during tax season and maximize every deduction you are entitled to.
+    `.trim(),
+  },
+  'bank-reconciliation-guide': {
+    title: 'Bank Reconciliation: Why It Matters and How to Do It',
+    author: 'James Chen',
+    date: '2026-07-28',
+    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80',
+    content: `
+## What is bank reconciliation?
+
+Bank reconciliation is the process of matching your internal financial records against your bank statement to ensure everything matches.
+
+## Why it matters
+
+Regular reconciliation catches errors, prevents fraud, and ensures your financial reports are accurate. It is essential for tax preparation and business decision-making.
+
+## Common discrepancies to watch for
+
+- Bank fees you forgot to record
+- Deposits that have not cleared yet
+- Duplicate entries in your books
+- Unauthorized transactions or fraud
+
+## How Cashaflux helps
+
+Cashaflux bank reconciliation feature lets you import CSV files from your bank, auto-match transactions to invoices and expenses, and reconcile with one click. The system flags unmatched items so you can investigate quickly.
+    `.trim(),
+  },
+  '1099-vs-w2': {
+    title: '1099 vs W-2: Understanding Worker Classification',
+    author: 'Alex Rivera',
+    date: '2026-07-20',
+    image: 'https://images.unsplash.com/photo-1521791136064-7986c2920216?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80',
+    content: `
+## The difference matters
+
+Worker classification determines tax obligations, benefits, and legal protections. Getting it wrong can result in penalties from the IRS and Department of Labor.
+
+## 1099 independent contractors
+
+Independent contractors control how and when they work. You do not withhold taxes for them. They set their own schedule, provide their own tools, and can work for multiple clients.
+
+## W-2 employees
+
+Employees work under your direction and control. You must withhold payroll taxes, pay employer taxes, and provide benefits as required by law.
+
+## Consequences of misclassification
+
+- Back payroll taxes plus interest and penalties
+- Fines under the Fair Labor Standards Act
+- Lawsuits for unpaid benefits and overtime
+
+## Use Cashaflux Payroll Export
+
+Cashaflux helps you track both W-2 and 1099 payments and export payroll-ready CSVs for Gusto, ADP, or Paychex.
+    `.trim(),
+  },
+  'freelance-invoicing-guide': {
+    title: 'The Complete Guide to Freelance Invoicing',
+    author: 'Priya Patel',
+    date: '2026-07-15',
+    image: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80',
+    content: `
+## Why professional invoicing matters
+
+Your invoice is more than a request for payment. It is a professional document that represents your brand. A clear, well-designed invoice builds trust and sets expectations.
+
+## Essential elements of every invoice
+
+- Your business name, address, and contact information
+- Client name and billing address
+- Unique invoice number for tracking
+- Invoice date and payment due date
+- Detailed line items with descriptions, rates, and quantities
+- Subtotal, any taxes, and total amount due
+- Payment terms and accepted payment methods
+
+## Creating invoices with Cashaflux
+
+Cashaflux invoicing tool lets you create professional invoices in seconds. Choose from customizable templates, add your logo, set payment terms, and send directly from the platform.
+
+## Following up on late payments
+
+- Due date: Send a gentle reminder
+- 3 days late: Send a polite follow-up
+- 7 days late: Send a more direct request
+- 14 days late: Final notice and consider pausing work
+
+## Best practices for getting paid faster
+
+- Send invoices immediately after completing work
+- Offer a small discount for early payment
+- Set up recurring invoices for retainer clients
+- Use Cashaflux automatic payment reminders
+    `.trim(),
+  },
+  'mileage-deduction-2026': {
+    title: 'Mileage Deduction 2026: What You Need to Know',
+    author: 'Alex Rivera',
+    date: '2026-07-10',
+    image: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80',
+    content: `
+## What is the mileage deduction?
+
+If you use your personal vehicle for business purposes, the IRS allows you to deduct a standard mileage rate per mile driven. This rate covers gas, maintenance, depreciation, and insurance.
+
+## Who qualifies for the deduction?
+
+- Meeting clients at their location
+- Traveling to job sites
+- Running business errands (bank, office supply store, post office)
+- Attending conferences or networking events
+
+Commuting between your home and regular workplace does not qualify.
+
+## Standard vs actual expenses
+
+You can choose between the standard mileage rate and the actual expense method. The standard rate is simpler, but the actual method may yield a larger deduction.
+
+## Tracking miles with Cashaflux
+
+Cashaflux mileage tracking feature lets you log trips with starting and ending odometer readings. Categorize each trip as business, personal, medical, or charitable. Generate a mileage report at tax time with one click.
+
+## Common mistakes to avoid
+
+- Claiming commuting miles as business miles
+- Forgetting to log individual trips
+- Estimating mileage instead of using exact readings
+- Mixing personal and business trips without proper allocation
+    `.trim(),
+  },
+  'tax-season-success': {
+    title: 'Tax Season Success: A Month-by-Month Preparation Plan',
+    author: 'Priya Patel',
+    date: '2026-07-05',
+    image: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80',
+    content: `
+## Why year-round tax preparation matters
+
+Waiting until March to think about taxes is a recipe for stress, missed deductions, and costly errors. The most successful business owners treat tax preparation as a year-round discipline.
+
+## January: Set your foundation
+
+- Review your prior year tax return for carryovers and insights
+- Set up your bookkeeping system for the new year
+- Update your estimated tax calculations based on projected income
+- Schedule quarterly estimated tax payments in Cashaflux Tax Centre
+
+## April: Q1 deadline and planning
+
+April 15 is the first estimated tax deadline. Use Cashaflux Tax Centre to file your payment. Start thinking about major purchases before year-end.
+
+## September: Tax planning season
+
+- Review year-to-date income and expenses
+- Meet with your accountant for a mid-year tax planning session
+- Consider equipment purchases before year-end
+
+## November-December: Year-end strategies
+
+- Make necessary purchases to maximize deductions
+- Pay any outstanding business expenses
+- Make charitable contributions
+
+## Using Cashaflux year-round
+
+Cashaflux is built for year-round financial management. Use the dashboard to track income and expenses, run reports anytime, store receipts digitally, and export everything your accountant needs.
+    `.trim(),
+  },
+  'read-profit-and-loss': {
+    title: 'How to Read a Profit and Loss Statement',
+    author: 'James Chen',
+    date: '2026-06-28',
+    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80',
+    content: `
+## What is a Profit and Loss statement?
+
+A Profit and Loss statement summarizes your revenue, costs, and expenses over a specific period. It tells you whether your business is profitable and where money is being made or lost.
+
+## The core components
+
+- Revenue: Total income from sales and services
+- Cost of Goods Sold (COGS): Direct costs of producing your product
+- Gross Profit: Revenue minus COGS
+- Operating Expenses: Rent, salaries, marketing, software
+- Net Profit: The final bottom line
+
+## Key ratios to calculate
+
+- Gross margin: Gross profit divided by revenue
+- Operating margin: Operating income divided by revenue
+- Net profit margin: Net profit divided by revenue
+
+## Using Cashaflux for P&L reporting
+
+Cashaflux Reports section generates your Profit and Loss statement automatically from your recorded transactions. View it by month, quarter, or year. Compare periods side by side. Export to PDF or CSV for your accountant.
+
+## Action items after reviewing your P&L
+
+- If gross margin is low: raise prices or reduce COGS
+- If operating expenses are high: cut unnecessary subscriptions
+- If net profit is thin: focus on your most profitable products
+    `.trim(),
+  },
+  'bookkeeping-vs-accounting': {
+    title: 'Bookkeeping vs Accounting: What is the Difference?',
+    author: 'Sarah Mitchell',
+    date: '2026-06-20',
+    image: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80',
+    content: `
+## Not the same thing
+
+Bookkeeping and accounting are often confused, but they serve different purposes. Understanding the distinction helps you hire the right people and use the right tools.
+
+## Bookkeeping: the daily work
+
+Bookkeeping is the day-to-day recording of financial transactions. Tasks include recording sales, logging expenses, categorizing transactions, reconciling bank accounts, and managing invoices.
+
+## Accounting: the big picture
+
+Accounting takes the data from bookkeeping and turns it into strategic insights. Accountants analyze reports, file taxes, provide business advice, and ensure compliance.
+
+## Do you need both?
+
+Every business needs both functions. How you deliver them depends on your stage:
+
+- Solo founder: Use Cashaflux for bookkeeping, hire a CPA for tax season
+- Small team: Part-time bookkeeper + annual CPA review
+- Growing business: Full-time bookkeeper + quarterly CPA meetings
+
+## How Cashaflux fits in
+
+Cashaflux handles the heavy lifting of bookkeeping: automated transaction categorization, receipt storage, bank reconciliation, invoicing, and report generation. Your accountant gets clean, organized data they can work with immediately.
+    `.trim(),
+  },
 }
 
 function getReadTime(content: string): number {
@@ -164,7 +434,7 @@ export default function BlogPostPage() {
           </SmoothScrollReveal>
 
           <SmoothScrollReveal delay={0.1}>
-            <h1 className="text-3xl sm:text-4xl font-bold text-brand-navy tracking-tight mb-4">{title}</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold font-heading text-brand-navy tracking-tight mb-4">{title}</h1>
             <div className="flex flex-wrap items-center gap-4 text-sm text-text-muted mb-4 pb-4 border-b border-border/50">
               {date && (
                 <span className="flex items-center gap-1.5">

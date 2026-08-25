@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react'
 import { Link, useLocation } from 'react-router'
-import {
-  LayoutDashboard, FileText, Wallet, Users, Landmark, BarChart3,
-  Receipt, Briefcase, UserPlus, Settings, PanelLeftClose, PanelLeft, Navigation,
-} from 'lucide-react'
+import { LayoutDashboard, FileText, Wallet, Users, Landmark, BarChart3,
+  Receipt, Briefcase, UserPlus, Settings, PanelLeftClose, PanelLeft, Navigation, Lock, Activity } from 'lucide-react'
 import Logo from '../../components/shared/Logo'
+import OrgSwitcher from './OrgSwitcher'
+import PlanUsage from './PlanUsage'
+import OnboardingChecklist from './OnboardingChecklist'
 import { cn } from '../../lib/utils'
 
 interface SidebarProps {
@@ -19,6 +20,7 @@ interface NavItem {
   label: string
   icon: typeof LayoutDashboard
   badge?: string
+  locked?: boolean
 }
 
 interface NavGroup {
@@ -43,16 +45,17 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Finances',
     items: [
-      { path: '/dashboard/bank', label: 'Bank', icon: Landmark },
-      { path: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
-      { path: '/dashboard/tax', label: 'Tax Centre', icon: Receipt },
-      { path: '/dashboard/payroll', label: 'Payroll', icon: Briefcase },
+      { path: '/dashboard/bank', label: 'Bank', icon: Landmark, locked: true },
+      { path: '/dashboard/reports', label: 'Reports', icon: BarChart3, locked: true },
+      { path: '/dashboard/tax', label: 'Tax Centre', icon: Receipt, locked: true },
+      { path: '/dashboard/payroll', label: 'Payroll', icon: Briefcase, locked: true },
     ],
   },
   {
     label: 'Account',
     items: [
       { path: '/dashboard/team', label: 'Team', icon: UserPlus },
+      { path: '/dashboard/activity', label: 'Activity', icon: Activity },
       { path: '/dashboard/settings', label: 'Settings', icon: Settings },
     ],
   },
@@ -67,7 +70,7 @@ function NavLink({ item, collapsed, onHover, onLeave }: { item: NavItem; collaps
 
   return (
     <Link
-      to={item.path}
+      to={item.locked ? '/dashboard/settings?tab=billing' : item.path}
       onClick={() => {
         const main = document.getElementById('sidebar-mobile-overlay')
         if (main) main.click()
@@ -87,6 +90,9 @@ function NavLink({ item, collapsed, onHover, onLeave }: { item: NavItem; collaps
       )}
       <item.icon className={cn('h-5 w-5 shrink-0', collapsed ? 'h-5 w-5' : 'h-4.5 w-4.5')} />
       {!collapsed && <span className="truncate">{item.label}</span>}
+      {!collapsed && item.locked && (
+        <Lock className="ml-auto h-3.5 w-3.5 shrink-0 text-white/30" />
+      )}
       {!collapsed && item.badge && (
         <span className="ml-auto rounded-full bg-brand-blue/20 px-2 py-0.5 text-[11px] font-semibold text-brand-blue-light">
           {item.badge}
@@ -129,7 +135,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4 space-y-6">
+        <nav className="flex-1 overflow-y-auto scrollbar-none py-4 space-y-6">
           {NAV_GROUPS.map((group) => (
             <div key={group.label}>
               {!collapsed && (
@@ -170,8 +176,20 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           </div>
         )}
 
-        {/* Bottom spacer */}
-        <div className={cn('border-t border-white/10 py-3', collapsed ? 'px-2' : 'px-3')}></div>
+        {/* Onboarding checklist */}
+        <div className={collapsed ? 'px-1' : ''}>
+          <OnboardingChecklist collapsed={collapsed} />
+        </div>
+
+        {/* Plan usage */}
+        <div className={collapsed ? 'px-1' : ''}>
+          <PlanUsage collapsed={collapsed} />
+        </div>
+
+        {/* Org switcher */}
+        <div className={cn('border-t border-white/10 py-3', collapsed ? 'px-2' : 'px-3')}>
+          <OrgSwitcher collapsed={collapsed} />
+        </div>
 
       </aside>
     </>

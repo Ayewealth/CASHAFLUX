@@ -17,41 +17,49 @@ const FEATURES_DETAIL = [
     icon: Receipt, title: 'Smart Invoicing', color: 'from-brand-navy to-brand-navy-light',
     desc: 'Create professional, customizable invoices in seconds. Auto-numbering, dynamic line items, tax rate calculation, and discount support.',
     benefits: ['Auto-generated invoice numbers (INV-0042)', 'Client selector with inline creation', 'Dynamic line items with tax rates', 'PDF generation with @react-pdf/renderer', 'Send via email with auto-attached PDF', 'Mark as paid, overdue, or sent status'],
+    screenshotSrc: '/screenshots/features-invoicing.png',
   },
   {
     icon: Banknote, title: 'Expense Tracking', color: 'from-blue-500 to-blue-600',
     desc: 'Log expenses with IRS Schedule C categories. Drag-and-drop receipt upload, split expenses across categories.',
     benefits: ['IRS Schedule C categories pre-loaded', 'Custom categories for your business', 'Receipt upload to Cloudflare R2', 'Split expenses across categories', 'Bulk delete and CSV export', 'Reconciled status tracking'],
+    screenshotSrc: '/screenshots/features-expenses.png',
   },
   {
     icon: BarChart3, title: 'Bank Reconciliation', color: 'from-amber-500 to-amber-600',
     desc: 'Import bank CSV files, auto-match transactions to invoices and expenses, and reconcile with one click. Supports major US bank formats.',
     benefits: ['CSV import with column mapping', 'Duplicate detection', 'Auto-match to invoices and expenses', 'One-click reconciliation', 'Reconciliation summary report', 'Support for Chase, BoA, Wells Fargo'],
+    screenshotSrc: '/screenshots/features-bank-card.png',
   },
   {
     icon: PieChart, title: 'Financial Reports', color: 'from-rose-500 to-rose-600',
     desc: 'Comprehensive reports with Recharts visualizations. Export as PDF or CSV. Profit & Loss, Balance Sheet, Cash Flow, and more.',
     benefits: ['Profit & Loss Statement', 'Balance Sheet', 'Cash Flow Statement', 'A/R and A/P Aging reports', 'Sales by Client report', 'All reports exportable as CSV'],
+    screenshotSrc: '/screenshots/features-reports-card.png',
   },
   {
     icon: FileText, title: 'Tax Centre', color: 'from-violet-500 to-violet-600',
     desc: 'Stay tax-ready year-round. Quarterly estimated tax reminders, 1099 contractor tracking, mileage log, and one-click accountant hand-off.',
     benefits: ['Quarterly tax deadline reminders', '1099-NEC contractor data export', 'Mileage log with IRS rate ($0.70/mi)', 'Tax-ready export package', 'Sales tax tracking by state', 'IRS category breakdown by tax year'],
+    screenshotSrc: '/screenshots/features-tax-card.png',
   },
   {
     icon: Wallet, title: 'Mileage Tracking', color: 'from-orange-500 to-orange-600',
     desc: 'Log business trips with origin, destination, and purpose. Automatic IRS mileage rate calculation. Total deduction summary for tax time.',
     benefits: ['Date, origin, destination logging', 'IRS standard mileage rate applied', 'Total miles and deduction calculation', 'Purpose tracking per trip', 'Filter by date range', 'Export for tax reporting'],
+    screenshotSrc: '/screenshots/features-mileage-card.png',
   },
   {
     icon: Calculator, title: 'Payroll Export', color: 'from-cyan-500 to-cyan-600',
     desc: 'Record employee/contractor payments and export payroll-ready CSVs compatible with Gusto, ADP, and Paychex.',
     benefits: ['W-2 and 1099 payment tracking', 'Payroll register with CSV export', 'Auto-posting to Wages category', 'MTD and YTD payroll totals', 'Gusto-compatible format', 'ADP and Paychex compatible'],
+    screenshotSrc: '/screenshots/features-payroll-card.png',
   },
   {
     icon: Users, title: 'Team Collaboration', color: 'from-indigo-500 to-indigo-600',
     desc: 'Invite team members with granular role-based access. Owner, Admin, Accountant (read-only), and Member roles with activity audit logging.',
     benefits: ['Role-based access control', 'Accountant read-only mode', 'Activity audit log', 'Invite by email via Resend', 'Revoke access anytime', 'Up to 5 team members (Business)'],
+    screenshotSrc: '/screenshots/features-team-card.png',
   },
 ]
 
@@ -74,7 +82,7 @@ export default function FeaturesPage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <SmoothScrollReveal>
-              <h1 className="text-4xl sm:text-5xl font-bold text-brand-navy tracking-tight mb-4">
+              <h1 className="text-4xl sm:text-5xl font-bold font-heading text-brand-navy tracking-tight mb-4">
                 Everything you need. <span className="text-brand-navy">Nothing you don't.</span>
               </h1>
               <p className="text-base text-text-muted leading-relaxed max-w-lg mb-6">
@@ -99,7 +107,7 @@ export default function FeaturesPage() {
       <section className="py-16 lg:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <SmoothScrollReveal>
-            <h2 className="text-2xl sm:text-3xl font-bold text-brand-navy tracking-tight text-center mb-4">
+            <h2 className="text-2xl sm:text-3xl font-bold font-heading text-brand-navy tracking-tight text-center mb-4">
               Built for how you work
             </h2>
             <p className="text-base text-text-muted text-center mb-12 max-w-lg mx-auto">
@@ -133,7 +141,7 @@ export default function FeaturesPage() {
                   <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 shadow-sm`}>
                     <feature.icon className="w-6 h-6 text-white" />
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-bold text-brand-navy tracking-tight mb-3">{feature.title}</h2>
+                  <h2 className="text-2xl sm:text-3xl font-bold font-heading text-brand-navy tracking-tight mb-3">{feature.title}</h2>
                   <p className="text-base text-text-muted leading-relaxed mb-6">{feature.desc}</p>
                   <ul className="space-y-2.5">
                     {feature.benefits.map((b) => (
@@ -149,7 +157,7 @@ export default function FeaturesPage() {
                 <div className="relative">
                   <FeaturePreview
                     label={feature.title}
-                    screenshotSrc={feature.title === 'Smart Invoicing' ? '/screenshots/features-invoicing.png' : feature.title === 'Expense Tracking' ? '/screenshots/features-expenses.png' : undefined}
+                    screenshotSrc={feature.screenshotSrc}
                     screenshotAlt={`${feature.title} screenshot`}
                   />
                 </div>
@@ -166,7 +174,7 @@ export default function FeaturesPage() {
             <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-brand-navy to-brand-navy-light flex items-center justify-center mx-auto mb-5 shadow-md">
               <Receipt className="w-7 h-7 text-white" />
             </div>
-            <h2 className="text-3xl sm:text-4xl font-bold text-brand-navy tracking-tight mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold font-heading text-brand-navy tracking-tight mb-4">
               Smart Invoicing — your most-used feature
             </h2>
             <p className="text-base text-text-muted leading-relaxed max-w-2xl mx-auto mb-8">
@@ -189,6 +197,11 @@ export default function FeaturesPage() {
             {FEATURES_DETAIL.slice(2).map((feature, i) => (
               <SmoothScrollReveal key={feature.title} delay={0.08 * i}>
                 <div className="p-6 rounded-2xl border border-border/50 bg-white hover:shadow-md hover:border-brand-navy/20 transition-all duration-300">
+                  {feature.screenshotSrc && (
+                    <div className="h-28 rounded-xl overflow-hidden border border-border/50 mb-4">
+                      <img src={feature.screenshotSrc} alt={feature.title} className="w-full h-full object-cover" />
+                    </div>
+                  )}
                   <div className="flex items-center gap-3 mb-4">
                     <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center shadow-sm`}>
                       <feature.icon className="w-5 h-5 text-white" />
@@ -215,7 +228,7 @@ export default function FeaturesPage() {
       <section className="py-16 lg:py-24">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <SmoothScrollReveal>
-            <h2 className="text-2xl sm:text-3xl font-bold text-brand-navy tracking-tight text-center mb-4">
+            <h2 className="text-2xl sm:text-3xl font-bold font-heading text-brand-navy tracking-tight text-center mb-4">
               What's coming next
             </h2>
             <p className="text-base text-text-muted text-center mb-12 max-w-lg mx-auto">
@@ -244,7 +257,7 @@ export default function FeaturesPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-brand-navy/10 via-transparent to-transparent pointer-events-none" />
         <div className="max-w-3xl mx-auto px-6 lg:px-8 text-center relative">
           <SmoothScrollReveal>
-            <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-4">Ready to get started?</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold font-heading text-white tracking-tight mb-4">Ready to get started?</h2>
             <p className="text-base text-white/60 leading-relaxed mb-8 max-w-lg mx-auto">Try Cashaflux free. No credit card required.</p>
             <Link
               to="/signup"

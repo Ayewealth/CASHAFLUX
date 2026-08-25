@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { Building2, CalendarDays, Globe, UserPlus, CheckCircle2, ChevronRight, ChevronLeft, X, Mail, Loader2, Upload, Trash2, MapPin, Phone, Globe2, FileText } from 'lucide-react'
+import { motion, AnimatePresence } from 'motion/react'
+import { Building2, CalendarDays, Globe, UserPlus, CheckCircle2, ChevronRight, ChevronLeft, X, Mail, Loader2, Upload, Trash2, MapPin, Phone, Globe2, FileText, Check } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
@@ -127,6 +128,7 @@ export default function OnboardingPage() {
   const [checkoutPending, setCheckoutPending] = useState(false)
   const [logoUploading, setLogoUploading] = useState(false)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [showSuccess, setShowSuccess] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { data: savedProgress, isLoading: progressLoading } = useQuery<{ currentStep: number; formData: FormData } | null>({
@@ -309,7 +311,8 @@ export default function OnboardingPage() {
         window.location.href = data.url
       } else {
         await fetch('/api/onboarding/progress', { method: 'DELETE' })
-        navigate('/dashboard', { replace: true })
+        setShowSuccess(true)
+        setTimeout(() => navigate('/dashboard', { replace: true }), 1500)
       }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong.')
@@ -320,7 +323,8 @@ export default function OnboardingPage() {
   function handleStep4Skip() {
     updateField('plan', 'free')
     fetch('/api/onboarding/progress', { method: 'DELETE' }).then(() => {
-      navigate('/dashboard', { replace: true })
+      setShowSuccess(true)
+      setTimeout(() => navigate('/dashboard', { replace: true }), 1500)
     })
   }
 
@@ -335,7 +339,30 @@ export default function OnboardingPage() {
   const progressPercent = ((currentStep - 1) / (STEPS.length - 1)) * 100
 
   return (
-    <div className="min-h-[100dvh] bg-bg text-text">
+    <>
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-bg flex items-center justify-center"
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+              className="flex flex-col items-center"
+            >
+              <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mb-4">
+                <Check className="w-10 h-10 text-success" />
+              </div>
+              <p className="text-lg font-semibold text-text">All set!</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <div className="min-h-[100dvh] bg-bg text-text">
       <header className="sticky top-0 z-10 border-b border-border bg-surface/80 backdrop-blur-sm">
         <div className="max-w-3xl mx-auto px-6 h-14 flex items-center">
           <Logo />
@@ -364,7 +391,12 @@ export default function OnboardingPage() {
             {/* Business Information */}
             <div>
               <p className="text-xs text-text-muted mb-4">Fields marked with <span className="text-danger">*</span> are required. All others are optional.</p>
-              <h3 className="text-xs font-medium text-text-muted uppercase tracking-wider mb-4">Business Information</h3>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-7 h-7 rounded-lg bg-brand-navy/10 flex items-center justify-center">
+                  <Building2 className="w-3.5 h-3.5 text-brand-navy" />
+                </div>
+                <h3 className="text-xs font-medium text-text-muted uppercase tracking-wider">Business Information</h3>
+              </div>
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="businessName" className="text-sm font-medium">Business name <span className="text-danger">*</span></Label>
@@ -472,7 +504,12 @@ export default function OnboardingPage() {
 
             {/* Business Address */}
             <div>
-              <h3 className="text-xs font-medium text-text-muted uppercase tracking-wider mb-4">Business Address <span className="font-normal normal-case">(optional)</span></h3>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-7 h-7 rounded-lg bg-brand-navy/10 flex items-center justify-center">
+                  <MapPin className="w-3.5 h-3.5 text-brand-navy" />
+                </div>
+                <h3 className="text-xs font-medium text-text-muted uppercase tracking-wider">Business Address <span className="font-normal normal-case">(optional)</span></h3>
+              </div>
               <div className="space-y-4">
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
@@ -531,7 +568,12 @@ export default function OnboardingPage() {
 
             {/* Logo */}
             <div>
-              <h3 className="text-xs font-medium text-text-muted uppercase tracking-wider mb-4">Logo <span className="font-normal normal-case">(optional)</span></h3>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-7 h-7 rounded-lg bg-brand-navy/10 flex items-center justify-center">
+                  <Upload className="w-3.5 h-3.5 text-brand-navy" />
+                </div>
+                <h3 className="text-xs font-medium text-text-muted uppercase tracking-wider">Logo <span className="font-normal normal-case">(optional)</span></h3>
+              </div>
               <div className="space-y-3">
                 <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-accent/50 transition-colors bg-surface">
                   {logoPreview || form.logoR2Key ? (
@@ -818,5 +860,6 @@ export default function OnboardingPage() {
         )}
       </main>
     </div>
+    </>
   )
 }

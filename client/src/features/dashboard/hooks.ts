@@ -41,6 +41,19 @@ export interface DashboardSummary {
     dueDate: string
   }[]
   clientCount: number
+  bankBalance: number
+  recentActivity: {
+    id: string
+    action: string
+    entityType: string
+    createdAt: string | null
+  }[]
+  openInvoiceCount: number
+  overdueCount: number
+  memberCount: number
+  recurringInvoiceCount: number
+  mileageTotal: number
+  payrollYtd: number
 }
 
 async function fetchDashboardSummary(): Promise<DashboardSummary> {

@@ -12,7 +12,7 @@ import { seedIndustries } from './seed'
 import './types'
 
 const app = express()
-app.set('trust proxy', true)
+app.set('trust proxy', 1)
 const httpServer = createServer(app)
 
 // Security headers
@@ -82,6 +82,10 @@ app.all('/api/auth/*', toNodeHandler(auth))
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true })
 })
+
+// Invitations routes — accept invites, get invite info
+import invitationsRoutes from './routes/invitations'
+app.use('/api/invitations', invitationsRoutes)
 
 // Onboarding routes — mounted before the generic requireAuth gate
 // since the router applies requireAuth internally

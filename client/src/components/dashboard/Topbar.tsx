@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { authClient } from '../../lib/auth-client'
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
@@ -6,6 +6,7 @@ import {
   Plus, Search, Bell, FileText, Wallet, UserPlus, LogOut, User, Settings, ChevronRight, Menu, Command,
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
+import CommandPalette from './CommandPalette'
 
 interface TopbarProps {
   mobileOpen: boolean
@@ -100,7 +101,7 @@ function UserMenu() {
 
   async function handleSignOut() {
     await authClient.signOut()
-    navigate('/login', { replace: true })
+    window.location.href = '/login'
   }
 
   return (
@@ -138,6 +139,19 @@ function UserMenu() {
 }
 
 export default function Topbar({ mobileOpen, onMobileToggle }: TopbarProps) {
+  const [cmdOpen, setCmdOpen] = useState(false)
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setCmdOpen(true)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border/50 bg-surface/80 backdrop-blur-xl shadow-sm px-4 lg:px-6">
       <button
@@ -155,12 +169,16 @@ export default function Topbar({ mobileOpen, onMobileToggle }: TopbarProps) {
         <input
           type="search"
           placeholder="Search..."
-          className="h-9 w-56 rounded-lg border border-input bg-transparent pl-9 pr-8 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-navy/20 transition-colors"
+          readOnly
+          onClick={() => setCmdOpen(true)}
+          className="h-9 w-56 rounded-lg border border-input bg-transparent pl-9 pr-8 text-sm text-text placeholder:text-text-muted cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-navy/20 transition-colors"
         />
         <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 rounded border border-border bg-surface px-1.5 py-0.5 text-[10px] font-medium text-text-muted pointer-events-none">
           <Command className="w-2.5 h-2.5" />K
         </kbd>
       </div>
+
+      <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
 
       <QuickActions />
 

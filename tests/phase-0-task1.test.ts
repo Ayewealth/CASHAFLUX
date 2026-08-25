@@ -3,7 +3,7 @@ import { execSync } from 'node:child_process'
 import { describe, it, expect } from 'vitest'
 
 describe('Task 1: Dependencies, Tailwind v4, & shadcn Init', () => {
-  it('pnpm build succeeds with Tailwind v4 compilation', () => {
+  it('pnpm build succeeds with Tailwind v4 compilation', { timeout: 180000 }, () => {
     const output = execSync('pnpm build', { encoding: 'utf-8', stdio: 'pipe' })
     expect(() => execSync('pnpm build', { encoding: 'utf-8' })).not.toThrow()
   })

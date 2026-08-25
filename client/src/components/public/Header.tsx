@@ -12,7 +12,7 @@ const NAV_ITEMS = [
   { label: 'Features', href: '/features' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'How it works', href: '/how-it-works' },
-  { label: 'About', href: '/about' },
+  // { label: 'About', href: '/about' },
   { label: 'Blog', href: '/blog' },
   { label: 'Contact', href: '/contact' },
 ]
@@ -198,7 +198,7 @@ export default function Header() {
                     </Link>
                   )}
                   <button
-                    onClick={() => { authClient.signOut(); setOpen(false) }}
+                    onClick={async () => { await authClient.signOut(); window.location.href = '/login' }}
                     className="flex w-full items-center gap-2 px-4 py-3 text-sm font-medium text-danger hover:bg-danger/5 rounded-xl transition-colors"
                   >
                     <LogOut className="h-4 w-4" />

@@ -4,7 +4,6 @@ import { auth } from '../auth'
 import { db } from '../db/client'
 import { clients, invoices, expenses, bankAccounts, bankTransactions, mileageLogs, payrollEntries, users, organizations, orgMembers } from '@shared/schema'
 import { eq } from 'drizzle-orm'
-import { getUserOrg } from '../lib/org'
 import { encrypt, decrypt, isEncrypted } from '../lib/encryption'
 import { sanitizeObject } from '../lib/sanitize'
 
@@ -13,9 +12,8 @@ router.use(requireAuth)
 
 router.get('/', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) { res.status(404).json({ error: 'No organization found' }); return }
-    const org = await db.query.organizations.findFirst({ where: (o, { eq }) => eq(o.id, userOrg.orgId) })
+    if (!req.orgId) { res.status(404).json({ error: 'No organization found' }); return }
+    const org = await db.query.organizations.findFirst({ where: (o, { eq }) => eq(o.id, req.orgId) })
     if (!org) { res.status(404).json({ error: 'Organization not found' }); return }
     if (org.ein && isEncrypted(org.ein)) {
       org.ein = decrypt(org.ein)
@@ -26,8 +24,7 @@ router.get('/', async (req, res) => {
 
 router.put('/', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) { res.status(404).json({ error: 'No organization found' }); return }
+    if (!req.orgId) { res.status(404).json({ error: 'No organization found' }); return }
     const allowed = ['name', 'type', 'addressLine1', 'addressLine2', 'city', 'state', 'zip', 'phone', 'website', 'ein', 'fiscalYearStart', 'currency', 'invoiceDefaults', 'notificationPreferences']
     const data: Record<string, unknown> = {}
     for (const key of allowed) {
@@ -40,8 +37,8 @@ router.put('/', async (req, res) => {
       const sanitized = sanitizeObject(data, ['name', 'type', 'addressLine1', 'addressLine2', 'city', 'state', 'zip', 'phone', 'website'])
       Object.assign(data, sanitized)
     }
-    await db.update(organizations).set(data).where(eq(organizations.id, userOrg.orgId))
-    const updated = await db.query.organizations.findFirst({ where: (o, { eq }) => eq(o.id, userOrg.orgId) })
+    await db.update(organizations).set(data).where(eq(organizations.id, req.orgId))
+    const updated = await db.query.organizations.findFirst({ where: (o, { eq }) => eq(o.id, req.orgId) })
     if (updated?.ein && isEncrypted(updated.ein)) {
       updated.ein = decrypt(updated.ein)
     }
@@ -74,9 +71,8 @@ router.post('/revoke-session/:sessionId', async (req, res) => {
 
 router.get('/export', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) { res.status(404).json({ error: 'No organization found' }); return }
-    const orgId = userOrg.orgId
+    if (!req.orgId) { res.status(404).json({ error: 'No organization found' }); return }
+    const orgId = req.orgId
     const [org, clientRows, invoiceRows, expenseRows, bankRows, txnRows, mileageRows, payrollRows, memberRows] = await Promise.all([
       db.query.organizations.findFirst({ where: (o, { eq }) => eq(o.id, orgId) }),
       db.query.clients.findMany({ where: (c, { eq }) => eq(c.orgId, orgId) }),

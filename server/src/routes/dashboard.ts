@@ -1,9 +1,8 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware/auth'
 import { db } from '../db/client'
-import { invoices, expenses, clients } from '@shared/schema'
+import { invoices, expenses, clients, bankAccounts, activityLog, orgMembers, recurringInvoices, mileageLogs, payrollEntries } from '@shared/schema'
 import { and, eq, gte, lt, lte, sql } from 'drizzle-orm'
-import { getUserOrg } from '../lib/org'
 
 const router = Router()
 router.use(requireAuth)
@@ -25,13 +24,12 @@ function generateMonthRange(start: Date, end: Date) {
 
 router.get('/summary', async (req, res) => {
   try {
-    const userOrg = await getUserOrg(req.user!.id)
-    if (!userOrg) {
+    if (!req.orgId) {
       res.status(404).json({ error: 'No organization found for this user' })
       return
     }
 
-    const orgId = userOrg.orgId
+    const orgId = req.orgId
     const now = new Date()
     const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     const firstOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -157,6 +155,68 @@ router.get('/summary', async (req, res) => {
       .where(and(eq(clients.orgId, orgId), eq(clients.archived, false)))
       .then((r) => Number(r[0]?.count ?? 0))
 
+    // Bank balance
+    const bankBalance = await db
+      .select({ total: sql<string>`COALESCE(SUM(${bankAccounts.currentBalance}), '0')` })
+      .from(bankAccounts)
+      .where(eq(bankAccounts.orgId, orgId))
+      .then((r) => parseFloat(r[0]?.total ?? '0'))
+
+    // Recent activity
+    const recentActivity = await db
+      .select({
+        id: activityLog.id,
+        action: activityLog.action,
+        entityType: activityLog.entityType,
+        createdAt: activityLog.createdAt,
+      })
+      .from(activityLog)
+      .where(eq(activityLog.orgId, orgId))
+      .orderBy(sql`${activityLog.createdAt} DESC`)
+      .limit(8)
+
+    // Open invoice count
+    const openInvoiceCount = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(invoices)
+      .where(and(eq(invoices.orgId, orgId), eq(invoices.status, 'sent')))
+      .then((r) => Number(r[0]?.count ?? 0))
+
+    // Overdue invoice count
+    const overdueCount = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(invoices)
+      .where(and(eq(invoices.orgId, orgId), eq(invoices.status, 'overdue')))
+      .then((r) => Number(r[0]?.count ?? 0))
+
+    // Member count
+    const memberCount = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(orgMembers)
+      .where(and(eq(orgMembers.orgId, orgId), sql`${orgMembers.joinedAt} IS NOT NULL`))
+      .then((r) => Number(r[0]?.count ?? 0))
+
+    // Recurring invoice count
+    const recurringInvoiceCount = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(recurringInvoices)
+      .where(eq(recurringInvoices.orgId, orgId))
+      .then((r) => Number(r[0]?.count ?? 0))
+
+    // Mileage total
+    const mileageTotal = await db
+      .select({ total: sql<string>`COALESCE(SUM(${mileageLogs.miles}), '0')` })
+      .from(mileageLogs)
+      .where(eq(mileageLogs.orgId, orgId))
+      .then((r) => parseFloat(r[0]?.total ?? '0'))
+
+    // Payroll YTD
+    const payrollYtd = await db
+      .select({ total: sql<string>`COALESCE(SUM(${payrollEntries.grossAmount}), '0')` })
+      .from(payrollEntries)
+      .where(eq(payrollEntries.orgId, orgId))
+      .then((r) => parseFloat(r[0]?.total ?? '0'))
+
     // Build KPI response
     const revenueChange = prevMonthRevenue > 0 ? ((mtdRevenue - prevMonthRevenue) / prevMonthRevenue) * 100 : mtdRevenue > 0 ? 100 : 0
     const expensesChange = prevMonthExpenses > 0 ? ((mtdExpenses - prevMonthExpenses) / prevMonthExpenses) * 100 : mtdExpenses > 0 ? 100 : 0
@@ -177,6 +237,14 @@ router.get('/summary', async (req, res) => {
       recentExpenses,
       upcomingDue,
       clientCount,
+      bankBalance,
+      recentActivity,
+      openInvoiceCount,
+      overdueCount,
+      memberCount,
+      recurringInvoiceCount,
+      mileageTotal,
+      payrollYtd,
     })
   } catch (err) {
     console.error(err)
