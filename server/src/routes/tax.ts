@@ -2,7 +2,8 @@ import { Router } from 'express'
 import { requireAuth, requirePlan } from '../middleware/auth'
 import { db } from '../db/client'
 import { invoices, expenses, expenseCategories } from '@shared/schema'
-import { and, eq, gte, lte, sql } from 'drizzle-orm'
+import { and, eq, gte, lte, isNull, sql } from 'drizzle-orm'
+import { demoFilter, andDemoFilter } from '../lib/demo-filter'
 
 const router = Router()
 router.use(requireAuth)
@@ -26,16 +27,20 @@ router.get('/summary', async (req, res) => {
     const yearStart = new Date(year, 0, 1)
     const yearEnd = new Date(year, 11, 31)
 
+    const totalIncomeConditions = [eq(invoices.orgId, orgId), eq(invoices.status, 'paid'), gte(invoices.createdAt, yearStart), lte(invoices.createdAt, yearEnd)]
+    andDemoFilter(totalIncomeConditions, invoices.demoSessionId, req.demoSessionId)
     const totalIncome = await db
       .select({ total: sql<string>`COALESCE(SUM(${invoices.total}),'0')` })
       .from(invoices)
-      .where(and(eq(invoices.orgId, orgId), eq(invoices.status, 'paid'), gte(invoices.createdAt, yearStart), lte(invoices.createdAt, yearEnd)))
+      .where(and(...totalIncomeConditions))
       .then(r => parseFloat(r[0]?.total ?? '0'))
 
+    const byCategoryConditions = [eq(expenses.orgId, orgId), gte(expenses.createdAt, yearStart), lte(expenses.createdAt, yearEnd)]
+    andDemoFilter(byCategoryConditions, expenses.demoSessionId, req.demoSessionId)
     const byCategory = await db
       .select({ category: expenses.category, total: sql<string>`COALESCE(SUM(${expenses.amount}),'0')` })
       .from(expenses)
-      .where(and(eq(expenses.orgId, orgId), gte(expenses.createdAt, yearStart), lte(expenses.createdAt, yearEnd)))
+      .where(and(...byCategoryConditions))
       .groupBy(expenses.category)
       .orderBy(expenses.category)
 
@@ -80,13 +85,13 @@ router.get('/export', async (req, res) => {
     const totalIncome = await db
       .select({ total: sql<string>`COALESCE(SUM(${invoices.total}),'0')` })
       .from(invoices)
-      .where(and(eq(invoices.orgId, orgId), eq(invoices.status, 'paid'), gte(invoices.createdAt, yearStart), lte(invoices.createdAt, yearEnd)))
+      .where(and(eq(invoices.orgId, orgId), eq(invoices.status, 'paid'), gte(invoices.createdAt, yearStart), lte(invoices.createdAt, yearEnd), req.demoSessionId ? eq(invoices.demoSessionId, req.demoSessionId) : isNull(invoices.demoSessionId)))
       .then(r => parseFloat(r[0]?.total ?? '0'))
 
     const expenseRows = await db
       .select({ category: expenses.category, total: sql<string>`COALESCE(SUM(${expenses.amount}),'0')` })
       .from(expenses)
-      .where(and(eq(expenses.orgId, orgId), gte(expenses.createdAt, yearStart), lte(expenses.createdAt, yearEnd)))
+      .where(and(eq(expenses.orgId, orgId), gte(expenses.createdAt, yearStart), lte(expenses.createdAt, yearEnd), req.demoSessionId ? eq(expenses.demoSessionId, req.demoSessionId) : isNull(expenses.demoSessionId)))
       .groupBy(expenses.category)
       .orderBy(expenses.category)
 

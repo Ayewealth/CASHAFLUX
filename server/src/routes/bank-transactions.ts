@@ -7,8 +7,9 @@ import {
   expenses,
   insertBankTransactionSchema,
 } from '@shared/schema'
-import { and, eq, gte, lte, sql } from 'drizzle-orm'
+import { and, eq, gte, lte, isNull, sql } from 'drizzle-orm'
 import { z } from 'zod'
+import { demoFilter, andDemoFilter } from '../lib/demo-filter'
 
 const router = Router()
 router.use(requireAuth)
@@ -28,6 +29,7 @@ router.get('/', async (req, res) => {
 
     const filters = req.query as Record<string, string | undefined>
     const conditions = [eq(bankTransactions.orgId, req.orgId)]
+    andDemoFilter(conditions, bankTransactions.demoSessionId, req.demoSessionId)
 
     if (filters.bankAccountId) {
       conditions.push(eq(bankTransactions.bankAccountId, filters.bankAccountId))
@@ -103,6 +105,7 @@ router.get('/reconciliation-summary', async (req, res) => {
 
     const filters = req.query as Record<string, string | undefined>
     const conditions = [eq(bankTransactions.orgId, req.orgId)]
+    andDemoFilter(conditions, bankTransactions.demoSessionId, req.demoSessionId)
 
     if (filters.bankAccountId) {
       conditions.push(eq(bankTransactions.bankAccountId, filters.bankAccountId))
@@ -193,7 +196,7 @@ router.post('/import', async (req, res) => {
     const { bankAccountId, columnMap, rows, hasHeader } = parsed.data
 
     const account = await db.query.bankAccounts.findFirst({
-      where: (a, { and, eq }) => and(eq(a.id, bankAccountId), eq(a.orgId, req.orgId)),
+      where: (a, { and, eq, isNull }) => and(eq(a.id, bankAccountId), eq(a.orgId, req.orgId), req.demoSessionId ? eq(a.demoSessionId, req.demoSessionId) : isNull(a.demoSessionId)),
     })
     if (!account) {
       res.status(404).json({ error: 'Bank account not found' })
@@ -202,7 +205,7 @@ router.post('/import', async (req, res) => {
 
     // Fetch existing transactions in this account for duplicate detection.
     const existing = await db.query.bankTransactions.findMany({
-      where: (t, { eq }) => eq(t.bankAccountId, bankAccountId),
+      where: (t, { and, eq, isNull }) => and(eq(t.bankAccountId, bankAccountId), req.demoSessionId ? eq(t.demoSessionId, req.demoSessionId) : isNull(t.demoSessionId)),
     })
     const existingSet = new Set(
       existing.map((t) => {
@@ -310,7 +313,7 @@ router.get('/:id', async (req, res) => {
     }
 
     const transaction = await db.query.bankTransactions.findFirst({
-      where: (t, { and, eq }) => and(eq(t.id, req.params.id), eq(t.orgId, req.orgId)),
+      where: (t, { and, eq, isNull }) => and(eq(t.id, req.params.id), eq(t.orgId, req.orgId), req.demoSessionId ? eq(t.demoSessionId, req.demoSessionId) : isNull(t.demoSessionId)),
     })
     if (!transaction) {
       res.status(404).json({ error: 'Bank transaction not found' })
@@ -357,9 +360,9 @@ router.put('/:id', async (req, res) => {
 
 // ─── Reconciliation endpoints ───
 
-async function findTransaction(id: string, orgId: string) {
+async function findTransaction(id: string, orgId: string, demoSessionId: string | null) {
   return db.query.bankTransactions.findFirst({
-    where: (t, { and, eq }) => and(eq(t.id, id), eq(t.orgId, orgId)),
+    where: (t, { and, eq, isNull }) => and(eq(t.id, id), eq(t.orgId, orgId), demoSessionId ? eq(t.demoSessionId, demoSessionId) : isNull(t.demoSessionId)),
   })
 }
 
@@ -370,7 +373,7 @@ router.post('/:id/match-invoice', async (req, res) => {
       return
     }
 
-    const transaction = await findTransaction(req.params.id, req.orgId)
+    const transaction = await findTransaction(req.params.id, req.orgId, req.demoSessionId)
     if (!transaction) {
       res.status(404).json({ error: 'Bank transaction not found' })
       return
@@ -378,7 +381,7 @@ router.post('/:id/match-invoice', async (req, res) => {
 
     const { invoiceId } = z.object({ invoiceId: z.string().min(1) }).parse(req.body)
     const invoice = await db.query.invoices.findFirst({
-      where: (i, { and, eq }) => and(eq(i.id, invoiceId), eq(i.orgId, req.orgId)),
+      where: (i, { and, eq, isNull }) => and(eq(i.id, invoiceId), eq(i.orgId, req.orgId), req.demoSessionId ? eq(i.demoSessionId, req.demoSessionId) : isNull(i.demoSessionId)),
     })
     if (!invoice) {
       res.status(404).json({ error: 'Invoice not found' })
@@ -408,7 +411,7 @@ router.post('/:id/match-expense', async (req, res) => {
       return
     }
 
-    const transaction = await findTransaction(req.params.id, req.orgId)
+    const transaction = await findTransaction(req.params.id, req.orgId, req.demoSessionId)
     if (!transaction) {
       res.status(404).json({ error: 'Bank transaction not found' })
       return
@@ -416,7 +419,7 @@ router.post('/:id/match-expense', async (req, res) => {
 
     const { expenseId } = z.object({ expenseId: z.string().min(1) }).parse(req.body)
     const expense = await db.query.expenses.findFirst({
-      where: (e, { and, eq }) => and(eq(e.id, expenseId), eq(e.orgId, req.orgId)),
+      where: (e, { and, eq, isNull }) => and(eq(e.id, expenseId), eq(e.orgId, req.orgId), req.demoSessionId ? eq(e.demoSessionId, req.demoSessionId) : isNull(e.demoSessionId)),
     })
     if (!expense) {
       res.status(404).json({ error: 'Expense not found' })
@@ -441,7 +444,7 @@ router.post('/:id/unmatch', async (req, res) => {
       return
     }
 
-    const transaction = await findTransaction(req.params.id, req.orgId)
+    const transaction = await findTransaction(req.params.id, req.orgId, req.demoSessionId)
     if (!transaction) {
       res.status(404).json({ error: 'Bank transaction not found' })
       return
@@ -465,7 +468,7 @@ router.post('/:id/reconcile', async (req, res) => {
       return
     }
 
-    const transaction = await findTransaction(req.params.id, req.orgId)
+    const transaction = await findTransaction(req.params.id, req.orgId, req.demoSessionId)
     if (!transaction) {
       res.status(404).json({ error: 'Bank transaction not found' })
       return
@@ -489,7 +492,7 @@ router.post('/:id/unreconcile', async (req, res) => {
       return
     }
 
-    const transaction = await findTransaction(req.params.id, req.orgId)
+    const transaction = await findTransaction(req.params.id, req.orgId, req.demoSessionId)
     if (!transaction) {
       res.status(404).json({ error: 'Bank transaction not found' })
       return

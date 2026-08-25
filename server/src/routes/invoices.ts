@@ -4,6 +4,7 @@ import { db } from '../db/client'
 import { invoices, invoiceLineItems, clients, organizations, insertInvoiceSchema, insertInvoiceLineItemSchema } from '@shared/schema'
 import { and, eq, gte, lte } from 'drizzle-orm'
 import { z } from 'zod'
+import { demoFilter, andDemoFilter } from '../lib/demo-filter'
 import { sendTemplateEmail, loadTemplate, renderTemplate } from '../emails/send'
 import { renderToStream } from '@react-pdf/renderer'
 import { InvoicePDF } from '../lib/invoice-pdf'
@@ -28,6 +29,7 @@ router.get('/', async (req, res) => {
 
     const filters = req.query as Record<string, string | undefined>
     const conditions = [eq(invoices.orgId, req.orgId)]
+    andDemoFilter(conditions, invoices.demoSessionId, req.demoSessionId)
 
     if (filters.status) {
       conditions.push(eq(invoices.status, filters.status as typeof invoices.$inferSelect.status))
@@ -127,7 +129,7 @@ router.get('/:id', async (req, res) => {
     }
 
     const invoice = await db.query.invoices.findFirst({
-      where: (i, { and, eq }) => and(eq(i.id, req.params.id), eq(i.orgId, req.orgId)),
+      where: (i, { and, eq, isNull }) => and(eq(i.id, req.params.id), eq(i.orgId, req.orgId), req.demoSessionId ? eq(i.demoSessionId, req.demoSessionId) : isNull(i.demoSessionId)),
     })
     if (!invoice) {
       res.status(404).json({ error: 'Invoice not found' })
@@ -189,7 +191,7 @@ router.put('/:id', async (req, res) => {
     }
 
     const updated = await db.query.invoices.findFirst({
-      where: (i, { eq }) => eq(i.id, req.params.id),
+      where: (i, { and, eq, isNull }) => and(eq(i.id, req.params.id), req.demoSessionId ? eq(i.demoSessionId, req.demoSessionId) : isNull(i.demoSessionId)),
     })
     const lineItems = await db.query.invoiceLineItems.findMany({
       where: (li, { eq }) => eq(li.invoiceId, req.params.id),
@@ -263,7 +265,7 @@ router.post('/:id/send', async (req, res) => {
     }
 
     const invoice = await db.query.invoices.findFirst({
-      where: (i, { and, eq }) => and(eq(i.id, req.params.id), eq(i.orgId, req.orgId)),
+      where: (i, { and, eq, isNull }) => and(eq(i.id, req.params.id), eq(i.orgId, req.orgId), req.demoSessionId ? eq(i.demoSessionId, req.demoSessionId) : isNull(i.demoSessionId)),
     })
     if (!invoice) {
       res.status(404).json({ error: 'Invoice not found' })
@@ -271,7 +273,7 @@ router.post('/:id/send', async (req, res) => {
     }
 
     const client = await db.query.clients.findFirst({
-      where: (c, { eq }) => eq(c.id, invoice.clientId),
+      where: (c, { and, eq, isNull }) => and(eq(c.id, invoice.clientId), req.demoSessionId ? eq(c.demoSessionId, req.demoSessionId) : isNull(c.demoSessionId)),
     })
     if (!client || !client.email) {
       res.status(400).json({ error: 'Client has no email address' })
@@ -327,7 +329,7 @@ router.get('/:id/pdf', async (req, res) => {
     }
 
     const invoice = await db.query.invoices.findFirst({
-      where: (i, { and, eq }) => and(eq(i.id, req.params.id), eq(i.orgId, req.orgId)),
+      where: (i, { and, eq, isNull }) => and(eq(i.id, req.params.id), eq(i.orgId, req.orgId), req.demoSessionId ? eq(i.demoSessionId, req.demoSessionId) : isNull(i.demoSessionId)),
     })
     if (!invoice) {
       res.status(404).json({ error: 'Invoice not found' })
@@ -339,7 +341,7 @@ router.get('/:id/pdf', async (req, res) => {
     })
 
     const client = await db.query.clients.findFirst({
-      where: (c, { eq }) => eq(c.id, invoice.clientId),
+      where: (c, { and, eq, isNull }) => and(eq(c.id, invoice.clientId), req.demoSessionId ? eq(c.demoSessionId, req.demoSessionId) : isNull(c.demoSessionId)),
     })
 
     const org = await db.query.organizations.findFirst({

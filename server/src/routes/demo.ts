@@ -64,11 +64,11 @@ function addMonths(date: Date, months: number): Date {
 router.get('/status', async (req, res) => {
   try {
     if (!req.orgId) { res.status(404).json({ error: 'No organization found' }); return }
-    const org = await db.query.organizations.findFirst({ where: (o, { eq }) => eq(o.id, req.orgId) })
-    const session = org?.demoMode
-      ? await db.query.demoSessions.findFirst({ where: (ds, { eq, and, isNull }) => and(eq(ds.orgId, req.orgId), isNull(ds.cleanedUpAt)) })
-      : null
-    res.json({ demoMode: org?.demoMode ?? false, demoSessionId: session?.id ?? null })
+    const org = await db.query.organizations.findFirst({
+      where: (o, { eq }) => eq(o.id, req.orgId),
+      columns: { demoMode: true, activeDemoSessionId: true },
+    })
+    res.json({ demoMode: org?.demoMode ?? false, demoSessionId: org?.activeDemoSessionId ?? null })
   } catch { res.status(500).json({ error: 'Failed to check demo status' }) }
 })
 
@@ -80,23 +80,24 @@ router.post('/toggle', async (req, res) => {
     const userId = req.user!.id
 
     if (!enabled) {
-      const session = await db.query.demoSessions.findFirst({
-        where: (ds, { eq, and, isNull }) => and(eq(ds.orgId, orgId), isNull(ds.cleanedUpAt)),
+      const org = await db.query.organizations.findFirst({
+        where: (o, { eq }) => eq(o.id, orgId),
+        columns: { activeDemoSessionId: true },
       })
-      if (session) {
-        const demoId = session.id
-        await Promise.all([
-          db.delete(clients).where(and(eq(clients.orgId, orgId), eq(clients.demoSessionId, demoId))),
-          db.delete(invoiceLineItems).where(eq(invoiceLineItems.demoSessionId, demoId)),
-          db.delete(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.demoSessionId, demoId))),
-          db.delete(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.demoSessionId, demoId))),
-          db.delete(bankTransactions).where(and(eq(bankTransactions.orgId, orgId), eq(bankTransactions.demoSessionId, demoId))),
-          db.delete(bankAccounts).where(and(eq(bankAccounts.orgId, orgId), eq(bankAccounts.demoSessionId, demoId))),
-          db.delete(mileageLogs).where(and(eq(mileageLogs.orgId, orgId), eq(mileageLogs.demoSessionId, demoId))),
-          db.delete(payrollEntries).where(and(eq(payrollEntries.orgId, orgId), eq(payrollEntries.demoSessionId, demoId))),
-          db.update(demoSessions).set({ cleanedUpAt: new Date() }).where(eq(demoSessions.id, demoId)),
-          db.update(organizations).set({ demoMode: false }).where(eq(organizations.id, orgId)),
-        ])
+      const demoId = org?.activeDemoSessionId
+      if (demoId) {
+        await db.delete(invoiceLineItems).where(eq(invoiceLineItems.demoSessionId, demoId))
+        await db.delete(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.demoSessionId, demoId)))
+        await db.delete(clients).where(and(eq(clients.orgId, orgId), eq(clients.demoSessionId, demoId)))
+        await db.delete(bankTransactions).where(and(eq(bankTransactions.orgId, orgId), eq(bankTransactions.demoSessionId, demoId)))
+        await db.delete(bankAccounts).where(and(eq(bankAccounts.orgId, orgId), eq(bankAccounts.demoSessionId, demoId)))
+        await db.delete(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.demoSessionId, demoId)))
+        await db.delete(mileageLogs).where(and(eq(mileageLogs.orgId, orgId), eq(mileageLogs.demoSessionId, demoId)))
+        await db.delete(payrollEntries).where(and(eq(payrollEntries.orgId, orgId), eq(payrollEntries.demoSessionId, demoId)))
+        await db.update(demoSessions).set({ cleanedUpAt: new Date() }).where(eq(demoSessions.id, demoId))
+        await db.update(organizations).set({ demoMode: false, activeDemoSessionId: null }).where(eq(organizations.id, orgId))
+      } else {
+        await db.update(organizations).set({ demoMode: false }).where(eq(organizations.id, orgId))
       }
       res.json({ demoMode: false })
       return
@@ -270,7 +271,7 @@ router.post('/toggle', async (req, res) => {
     await db.insert(payrollEntries).values(allPayroll)
 
     // Mark org as demo mode
-    await db.update(organizations).set({ demoMode: true }).where(eq(organizations.id, orgId))
+    await db.update(organizations).set({ demoMode: true, activeDemoSessionId: demoId }).where(eq(organizations.id, orgId))
 
     res.json({ demoMode: true, demoSessionId: demoId })
   } catch (err) {

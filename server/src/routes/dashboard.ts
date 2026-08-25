@@ -2,7 +2,8 @@ import { Router } from 'express'
 import { requireAuth } from '../middleware/auth'
 import { db } from '../db/client'
 import { invoices, expenses, clients, bankAccounts, activityLog, orgMembers, recurringInvoices, mileageLogs, payrollEntries } from '@shared/schema'
-import { and, eq, gte, lt, lte, sql } from 'drizzle-orm'
+import { and, eq, gte, lt, lte, isNull, sql } from 'drizzle-orm'
+import { demoFilter, andDemoFilter } from '../lib/demo-filter'
 
 const router = Router()
 router.use(requireAuth)
@@ -36,36 +37,46 @@ router.get('/summary', async (req, res) => {
     const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1)
 
     // MTD Revenue (paid invoices by issueDate)
+    const mtdRevenueConditions = [eq(invoices.orgId, orgId), eq(invoices.status, 'paid'), gte(invoices.issueDate, firstOfMonth)]
+    andDemoFilter(mtdRevenueConditions, invoices.demoSessionId, req.demoSessionId)
     const mtdRevenue = await db
       .select({ total: sql<string>`COALESCE(SUM(${invoices.total}), '0')` })
       .from(invoices)
-      .where(and(eq(invoices.orgId, orgId), eq(invoices.status, 'paid'), gte(invoices.issueDate, firstOfMonth)))
+      .where(and(...mtdRevenueConditions))
       .then((r) => parseFloat(r[0]?.total ?? '0'))
 
+    const prevMonthRevenueConditions = [eq(invoices.orgId, orgId), eq(invoices.status, 'paid'), gte(invoices.issueDate, firstOfPrevMonth), lt(invoices.issueDate, firstOfMonth)]
+    andDemoFilter(prevMonthRevenueConditions, invoices.demoSessionId, req.demoSessionId)
     const prevMonthRevenue = await db
       .select({ total: sql<string>`COALESCE(SUM(${invoices.total}), '0')` })
       .from(invoices)
-      .where(and(eq(invoices.orgId, orgId), eq(invoices.status, 'paid'), gte(invoices.issueDate, firstOfPrevMonth), lt(invoices.issueDate, firstOfMonth)))
+      .where(and(...prevMonthRevenueConditions))
       .then((r) => parseFloat(r[0]?.total ?? '0'))
 
     // Outstanding invoices total
+    const outstandingConditions = [eq(invoices.orgId, orgId), eq(invoices.status, 'sent')]
+    andDemoFilter(outstandingConditions, invoices.demoSessionId, req.demoSessionId)
     const outstanding = await db
       .select({ total: sql<string>`COALESCE(SUM(${invoices.total}), '0')` })
       .from(invoices)
-      .where(and(eq(invoices.orgId, orgId), eq(invoices.status, 'sent')))
+      .where(and(...outstandingConditions))
       .then((r) => parseFloat(r[0]?.total ?? '0'))
 
     // MTD Expenses (by expense date)
+    const mtdExpensesConditions = [eq(expenses.orgId, orgId), gte(expenses.date, firstOfMonth)]
+    andDemoFilter(mtdExpensesConditions, expenses.demoSessionId, req.demoSessionId)
     const mtdExpenses = await db
       .select({ total: sql<string>`COALESCE(SUM(${expenses.amount}), '0')` })
       .from(expenses)
-      .where(and(eq(expenses.orgId, orgId), gte(expenses.date, firstOfMonth)))
+      .where(and(...mtdExpensesConditions))
       .then((r) => parseFloat(r[0]?.total ?? '0'))
 
+    const prevMonthExpensesConditions = [eq(expenses.orgId, orgId), gte(expenses.date, firstOfPrevMonth), lt(expenses.date, firstOfMonth)]
+    andDemoFilter(prevMonthExpensesConditions, expenses.demoSessionId, req.demoSessionId)
     const prevMonthExpenses = await db
       .select({ total: sql<string>`COALESCE(SUM(${expenses.amount}), '0')` })
       .from(expenses)
-      .where(and(eq(expenses.orgId, orgId), gte(expenses.date, firstOfPrevMonth), lt(expenses.date, firstOfMonth)))
+      .where(and(...prevMonthExpensesConditions))
       .then((r) => parseFloat(r[0]?.total ?? '0'))
 
     // Net cash flow
@@ -73,6 +84,8 @@ router.get('/summary', async (req, res) => {
     const prevNetCashFlow = prevMonthRevenue - prevMonthExpenses
 
     // Monthly cash flow for chart (last 12 months by issueDate/date)
+    const rawIncomeConditions = [eq(invoices.orgId, orgId), eq(invoices.status, 'paid'), gte(invoices.issueDate, twelveMonthsAgo)]
+    andDemoFilter(rawIncomeConditions, invoices.demoSessionId, req.demoSessionId)
     const rawIncome = await db
       .select({
         month: sql<string>`to_char(${invoices.issueDate}, 'Mon')`,
@@ -80,10 +93,12 @@ router.get('/summary', async (req, res) => {
         total: sql<string>`COALESCE(SUM(${invoices.total}), '0')`,
       })
       .from(invoices)
-      .where(and(eq(invoices.orgId, orgId), eq(invoices.status, 'paid'), gte(invoices.issueDate, twelveMonthsAgo)))
+      .where(and(...rawIncomeConditions))
       .groupBy(sql`to_char(${invoices.issueDate}, 'Mon')`, sql`to_char(${invoices.issueDate}, 'YYYY')`)
       .orderBy(sql`MIN(${invoices.issueDate})`)
 
+    const rawExpensesConditions = [eq(expenses.orgId, orgId), gte(expenses.date, twelveMonthsAgo)]
+    andDemoFilter(rawExpensesConditions, expenses.demoSessionId, req.demoSessionId)
     const rawExpenses = await db
       .select({
         month: sql<string>`to_char(${expenses.date}, 'Mon')`,
@@ -91,7 +106,7 @@ router.get('/summary', async (req, res) => {
         total: sql<string>`COALESCE(SUM(${expenses.amount}), '0')`,
       })
       .from(expenses)
-      .where(and(eq(expenses.orgId, orgId), gte(expenses.date, twelveMonthsAgo)))
+      .where(and(...rawExpensesConditions))
       .groupBy(sql`to_char(${expenses.date}, 'Mon')`, sql`to_char(${expenses.date}, 'YYYY')`)
       .orderBy(sql`MIN(${expenses.date})`)
 
@@ -110,6 +125,8 @@ router.get('/summary', async (req, res) => {
     }))
 
     // Recent 5 invoices (by issueDate descending)
+    const recentInvoicesConditions = [eq(invoices.orgId, orgId)]
+    andDemoFilter(recentInvoicesConditions, invoices.demoSessionId, req.demoSessionId)
     const recentInvoices = await db
       .select({
         id: invoices.id,
@@ -122,19 +139,21 @@ router.get('/summary', async (req, res) => {
       })
       .from(invoices)
       .innerJoin(clients, eq(clients.id, invoices.clientId))
-      .where(eq(invoices.orgId, orgId))
+      .where(and(...recentInvoicesConditions))
       .orderBy(sql`${invoices.issueDate} DESC NULLS LAST`)
       .limit(5)
 
     // Recent 5 expenses (by date descending)
     const recentExpenses = await db.query.expenses.findMany({
-      where: (e, { eq }) => eq(e.orgId, orgId),
+      where: (e, { and, eq, isNull }) => and(eq(e.orgId, orgId), req.demoSessionId ? eq(e.demoSessionId, req.demoSessionId) : isNull(e.demoSessionId)),
       orderBy: (e, { desc }) => [desc(e.date)],
       limit: 5,
     })
 
     // Upcoming due invoices (within 14 days)
     const fourteenDays = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
+    const upcomingDueConditions = [eq(invoices.orgId, orgId), eq(invoices.status, 'sent'), lte(invoices.dueDate, fourteenDays)]
+    andDemoFilter(upcomingDueConditions, invoices.demoSessionId, req.demoSessionId)
     const upcomingDue = await db
       .select({
         id: invoices.id,
@@ -145,21 +164,25 @@ router.get('/summary', async (req, res) => {
       })
       .from(invoices)
       .innerJoin(clients, eq(clients.id, invoices.clientId))
-      .where(and(eq(invoices.orgId, orgId), eq(invoices.status, 'sent'), lte(invoices.dueDate, fourteenDays)))
+      .where(and(...upcomingDueConditions))
       .orderBy(invoices.dueDate)
 
     // Client count
+    const clientCountConditions = [eq(clients.orgId, orgId), eq(clients.archived, false)]
+    andDemoFilter(clientCountConditions, clients.demoSessionId, req.demoSessionId)
     const clientCount = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(clients)
-      .where(and(eq(clients.orgId, orgId), eq(clients.archived, false)))
+      .where(and(...clientCountConditions))
       .then((r) => Number(r[0]?.count ?? 0))
 
     // Bank balance
+    const bankBalanceConditions = [eq(bankAccounts.orgId, orgId)]
+    andDemoFilter(bankBalanceConditions, bankAccounts.demoSessionId, req.demoSessionId)
     const bankBalance = await db
       .select({ total: sql<string>`COALESCE(SUM(${bankAccounts.currentBalance}), '0')` })
       .from(bankAccounts)
-      .where(eq(bankAccounts.orgId, orgId))
+      .where(and(...bankBalanceConditions))
       .then((r) => parseFloat(r[0]?.total ?? '0'))
 
     // Recent activity
@@ -176,17 +199,21 @@ router.get('/summary', async (req, res) => {
       .limit(8)
 
     // Open invoice count
+    const openInvoiceCountConditions = [eq(invoices.orgId, orgId), eq(invoices.status, 'sent')]
+    andDemoFilter(openInvoiceCountConditions, invoices.demoSessionId, req.demoSessionId)
     const openInvoiceCount = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(invoices)
-      .where(and(eq(invoices.orgId, orgId), eq(invoices.status, 'sent')))
+      .where(and(...openInvoiceCountConditions))
       .then((r) => Number(r[0]?.count ?? 0))
 
     // Overdue invoice count
+    const overdueCountConditions = [eq(invoices.orgId, orgId), eq(invoices.status, 'overdue')]
+    andDemoFilter(overdueCountConditions, invoices.demoSessionId, req.demoSessionId)
     const overdueCount = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(invoices)
-      .where(and(eq(invoices.orgId, orgId), eq(invoices.status, 'overdue')))
+      .where(and(...overdueCountConditions))
       .then((r) => Number(r[0]?.count ?? 0))
 
     // Member count
@@ -204,17 +231,21 @@ router.get('/summary', async (req, res) => {
       .then((r) => Number(r[0]?.count ?? 0))
 
     // Mileage total
+    const mileageTotalConditions = [eq(mileageLogs.orgId, orgId)]
+    andDemoFilter(mileageTotalConditions, mileageLogs.demoSessionId, req.demoSessionId)
     const mileageTotal = await db
       .select({ total: sql<string>`COALESCE(SUM(${mileageLogs.miles}), '0')` })
       .from(mileageLogs)
-      .where(eq(mileageLogs.orgId, orgId))
+      .where(and(...mileageTotalConditions))
       .then((r) => parseFloat(r[0]?.total ?? '0'))
 
     // Payroll YTD
+    const payrollYtdConditions = [eq(payrollEntries.orgId, orgId)]
+    andDemoFilter(payrollYtdConditions, payrollEntries.demoSessionId, req.demoSessionId)
     const payrollYtd = await db
       .select({ total: sql<string>`COALESCE(SUM(${payrollEntries.grossAmount}), '0')` })
       .from(payrollEntries)
-      .where(eq(payrollEntries.orgId, orgId))
+      .where(and(...payrollYtdConditions))
       .then((r) => parseFloat(r[0]?.total ?? '0'))
 
     // Build KPI response

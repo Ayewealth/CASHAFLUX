@@ -2,7 +2,8 @@ import { Router } from 'express'
 import { requireAuth, requirePlan } from '../middleware/auth'
 import { db } from '../db/client'
 import { recurringInvoices, invoices, invoiceLineItems, insertRecurringInvoiceSchema } from '@shared/schema'
-import { and, eq, lte } from 'drizzle-orm'
+import { and, eq, lte, isNull } from 'drizzle-orm'
+import { demoFilter, andDemoFilter } from '../lib/demo-filter'
 
 const router = Router()
 router.use(requireAuth)
@@ -15,7 +16,7 @@ router.get('/', async (req, res) => {
       return
     }
     const rows = await db.query.recurringInvoices.findMany({
-      where: (r, { eq }) => eq(r.orgId, req.orgId),
+      where: (r, { and, eq, isNull }) => and(eq(r.orgId, req.orgId), req.demoSessionId ? eq(r.demoSessionId, req.demoSessionId) : isNull(r.demoSessionId)),
       orderBy: (r, { desc }) => [desc(r.createdAt)],
     })
     res.json(rows)
@@ -56,7 +57,7 @@ router.delete('/:id', async (req, res) => {
       return
     }
     const existing = await db.query.recurringInvoices.findFirst({
-      where: (r, { and, eq }) => and(eq(r.id, req.params.id), eq(r.orgId, req.orgId)),
+      where: (r, { and, eq, isNull }) => and(eq(r.id, req.params.id), eq(r.orgId, req.orgId), req.demoSessionId ? eq(r.demoSessionId, req.demoSessionId) : isNull(r.demoSessionId)),
     })
     if (!existing) {
       res.status(404).json({ error: 'Recurring invoice not found' })
@@ -78,7 +79,7 @@ router.post('/process', async (req, res) => {
 
     const now = new Date()
     const due = await db.query.recurringInvoices.findMany({
-      where: (r, { and, eq }) => and(eq(r.orgId, req.orgId), eq(r.active, true), lte(r.nextDate, now)),
+      where: (r, { and, eq, isNull }) => and(eq(r.orgId, req.orgId), eq(r.active, true), lte(r.nextDate, now), req.demoSessionId ? eq(r.demoSessionId, req.demoSessionId) : isNull(r.demoSessionId)),
     })
 
     const FREQUENCY_DAYS: Record<string, number> = {
@@ -88,12 +89,12 @@ router.post('/process', async (req, res) => {
     let generated = 0
     for (const ri of due) {
       const template = await db.query.invoices.findFirst({
-        where: (i, { eq }) => eq(i.id, ri.templateInvoiceId),
+        where: (i, { and, eq, isNull }) => and(eq(i.id, ri.templateInvoiceId), req.demoSessionId ? eq(i.demoSessionId, req.demoSessionId) : isNull(i.demoSessionId)),
       })
       if (!template) continue
 
       const items = await db.query.invoiceLineItems.findMany({
-        where: (li, { eq }) => eq(li.invoiceId, ri.templateInvoiceId),
+        where: (li, { and, eq, isNull }) => and(eq(li.invoiceId, ri.templateInvoiceId), req.demoSessionId ? eq(li.demoSessionId, req.demoSessionId) : isNull(li.demoSessionId)),
       })
 
       const newId = crypto.randomUUID()

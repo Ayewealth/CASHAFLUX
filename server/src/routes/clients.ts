@@ -2,8 +2,9 @@ import { Router } from 'express'
 import { requireAuth } from '../middleware/auth'
 import { db } from '../db/client'
 import { clients, users, insertClientSchema } from '@shared/schema'
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, isNull, sql } from 'drizzle-orm'
 import { isAtLimit, planLimitResponse } from '../lib/limits'
+import { demoFilter, andDemoFilter } from '../lib/demo-filter'
 
 const router = Router()
 router.use(requireAuth)
@@ -16,7 +17,7 @@ router.get('/', async (req, res) => {
     }
 
     const rows = await db.query.clients.findMany({
-      where: (c, { and, eq }) => and(eq(c.orgId, req.orgId), eq(c.archived, false)),
+      where: (c, { and, eq, isNull }) => and(eq(c.orgId, req.orgId), eq(c.archived, false), req.demoSessionId ? eq(c.demoSessionId, req.demoSessionId) : isNull(c.demoSessionId)),
       orderBy: (c, { desc }) => [desc(c.createdAt)],
     })
     res.json(rows)
@@ -69,7 +70,7 @@ router.get('/:id', async (req, res) => {
     }
 
     const client = await db.query.clients.findFirst({
-      where: (c, { and, eq }) => and(eq(c.id, req.params.id), eq(c.orgId, req.orgId)),
+      where: (c, { and, eq, isNull }) => and(eq(c.id, req.params.id), eq(c.orgId, req.orgId), req.demoSessionId ? eq(c.demoSessionId, req.demoSessionId) : isNull(c.demoSessionId)),
     })
     if (!client) {
       res.status(404).json({ error: 'Client not found' })

@@ -2,7 +2,8 @@ import { Router } from 'express'
 import { requireAuth } from '../middleware/auth'
 import { db } from '../db/client'
 import { mileageLogs, insertMileageLogSchema } from '@shared/schema'
-import { and, eq, gte, lte } from 'drizzle-orm'
+import { and, eq, gte, lte, isNull } from 'drizzle-orm'
+import { demoFilter, andDemoFilter } from '../lib/demo-filter'
 
 const router = Router()
 router.use(requireAuth)
@@ -18,6 +19,7 @@ router.get('/', async (req, res) => {
 
     const filters = req.query as Record<string, string | undefined>
     const conditions = [eq(mileageLogs.orgId, req.orgId)]
+    andDemoFilter(conditions, mileageLogs.demoSessionId, req.demoSessionId)
 
     if (filters.dateFrom) {
       conditions.push(gte(mileageLogs.date, new Date(filters.dateFrom)))
@@ -74,7 +76,7 @@ router.get('/:id', async (req, res) => {
     }
 
     const log = await db.query.mileageLogs.findFirst({
-      where: (m, { and, eq }) => and(eq(m.id, req.params.id), eq(m.orgId, req.orgId)),
+      where: (m, { and, eq, isNull }) => and(eq(m.id, req.params.id), eq(m.orgId, req.orgId), req.demoSessionId ? eq(m.demoSessionId, req.demoSessionId) : isNull(m.demoSessionId)),
     })
     if (!log) {
       res.status(404).json({ error: 'Mileage log not found' })

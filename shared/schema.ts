@@ -108,6 +108,7 @@ export const organizations = pgTable('organizations', {
   currency: text('currency').default('USD').notNull(),
   fiscalYearStart: integer('fiscal_year_start').default(1).notNull(),
   demoMode: boolean('demo_mode').default(false).notNull(),
+  activeDemoSessionId: text('active_demo_session_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 

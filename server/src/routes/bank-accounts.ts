@@ -2,7 +2,8 @@ import { Router } from 'express'
 import { requireAuth, requirePlan } from '../middleware/auth'
 import { db } from '../db/client'
 import { bankAccounts, bankTransactions, insertBankAccountSchema } from '@shared/schema'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, isNull } from 'drizzle-orm'
+import { demoFilter, andDemoFilter } from '../lib/demo-filter'
 
 const router = Router()
 router.use(requireAuth)
@@ -16,7 +17,7 @@ router.get('/', async (req, res) => {
     }
 
     const rows = await db.query.bankAccounts.findMany({
-      where: (a, { eq }) => eq(a.orgId, req.orgId),
+      where: (a, { and, eq, isNull }) => and(eq(a.orgId, req.orgId), req.demoSessionId ? eq(a.demoSessionId, req.demoSessionId) : isNull(a.demoSessionId)),
       orderBy: (a, { asc }) => [asc(a.name)],
     })
     res.json(rows)
@@ -58,7 +59,7 @@ router.get('/:id', async (req, res) => {
     }
 
     const account = await db.query.bankAccounts.findFirst({
-      where: (a, { and, eq }) => and(eq(a.id, req.params.id), eq(a.orgId, req.orgId)),
+      where: (a, { and, eq, isNull }) => and(eq(a.id, req.params.id), eq(a.orgId, req.orgId), req.demoSessionId ? eq(a.demoSessionId, req.demoSessionId) : isNull(a.demoSessionId)),
     })
     if (!account) {
       res.status(404).json({ error: 'Bank account not found' })

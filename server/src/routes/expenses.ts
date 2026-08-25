@@ -3,9 +3,10 @@ import multer from 'multer'
 import { requireAuth } from '../middleware/auth'
 import { db } from '../db/client'
 import { expenses, expenseAllocations, insertExpenseSchema, insertExpenseAllocationSchema } from '@shared/schema'
-import { and, eq, gte, lte, inArray, sql } from 'drizzle-orm'
+import { and, eq, gte, lte, inArray, isNull, sql } from 'drizzle-orm'
 import { uploadFile } from '../lib/r2'
 import { z } from 'zod'
+import { demoFilter, andDemoFilter } from '../lib/demo-filter'
 
 const router = Router()
 router.use(requireAuth)
@@ -32,6 +33,7 @@ router.get('/', async (req, res) => {
 
     const filters = req.query as Record<string, string | undefined>
     const conditions = [eq(expenses.orgId, req.orgId)]
+    andDemoFilter(conditions, expenses.demoSessionId, req.demoSessionId)
 
     if (filters.category) {
       conditions.push(eq(expenses.category, filters.category))
@@ -118,6 +120,7 @@ router.get('/export/csv', async (req, res) => {
 
     const filters = req.query as Record<string, string | undefined>
     const conditions = [eq(expenses.orgId, req.orgId)]
+    andDemoFilter(conditions, expenses.demoSessionId, req.demoSessionId)
 
     if (filters.category) conditions.push(eq(expenses.category, filters.category))
     if (filters.dateFrom) conditions.push(gte(expenses.date, new Date(filters.dateFrom)))
@@ -154,7 +157,7 @@ router.post('/bulk-delete', async (req, res) => {
       return
     }
 
-    await db.delete(expenses).where(and(eq(expenses.orgId, req.orgId), inArray(expenses.id, ids)))
+    await db.delete(expenses).where(and(eq(expenses.orgId, req.orgId), inArray(expenses.id, ids), ...(req.demoSessionId ? [eq(expenses.demoSessionId, req.demoSessionId)] : [isNull(expenses.demoSessionId)])))
 
     res.json({ ok: true })
   } catch {
@@ -170,7 +173,7 @@ router.get('/:id', async (req, res) => {
     }
 
     const expense = await db.query.expenses.findFirst({
-      where: (e, { and, eq }) => and(eq(e.id, req.params.id), eq(e.orgId, req.orgId)),
+      where: (e, { and, eq, isNull }) => and(eq(e.id, req.params.id), eq(e.orgId, req.orgId), req.demoSessionId ? eq(e.demoSessionId, req.demoSessionId) : isNull(e.demoSessionId)),
     })
     if (!expense) {
       res.status(404).json({ error: 'Expense not found' })
@@ -229,7 +232,7 @@ router.put('/:id', async (req, res) => {
       }
     }
 
-    const [updated] = await db.select().from(expenses).where(eq(expenses.id, req.params.id)).limit(1)
+    const [updated] = await db.select().from(expenses).where(and(eq(expenses.id, req.params.id), req.demoSessionId ? eq(expenses.demoSessionId, req.demoSessionId) : isNull(expenses.demoSessionId))).limit(1)
 
     res.json(updated)
   } catch {

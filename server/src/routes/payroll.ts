@@ -2,7 +2,8 @@ import { Router } from 'express'
 import { requireAuth, requirePlan } from '../middleware/auth'
 import { db } from '../db/client'
 import { payrollEntries, expenses, insertPayrollEntrySchema } from '@shared/schema'
-import { and, eq, gte, lte, sql } from 'drizzle-orm'
+import { and, eq, gte, lte, isNull, sql } from 'drizzle-orm'
+import { demoFilter, andDemoFilter } from '../lib/demo-filter'
 
 const router = Router()
 router.use(requireAuth)
@@ -16,7 +17,7 @@ router.get('/', async (req, res) => {
     const yearEnd = new Date(year, 11, 31)
 
     const rows = await db.query.payrollEntries.findMany({
-      where: (p, { and, eq }) => and(eq(p.orgId, req.orgId), gte(p.payDate, yearStart), lte(p.payDate, yearEnd)),
+      where: (p, { and, eq, isNull }) => and(eq(p.orgId, req.orgId), gte(p.payDate, yearStart), lte(p.payDate, yearEnd), req.demoSessionId ? eq(p.demoSessionId, req.demoSessionId) : isNull(p.demoSessionId)),
       orderBy: (p, { desc }) => [desc(p.payDate)],
     })
     const totalEmployees = [...new Set(rows.map(r => r.name))].length
@@ -54,7 +55,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     if (!req.orgId) { res.status(404).json({ error: 'No organization found' }); return }
-    const existing = await db.query.payrollEntries.findFirst({ where: (p, { and, eq }) => and(eq(p.id, req.params.id), eq(p.orgId, req.orgId)) })
+    const existing = await db.query.payrollEntries.findFirst({ where: (p, { and, eq, isNull }) => and(eq(p.id, req.params.id), eq(p.orgId, req.orgId), req.demoSessionId ? eq(p.demoSessionId, req.demoSessionId) : isNull(p.demoSessionId)) })
     if (!existing) { res.status(404).json({ error: 'Payroll entry not found' }); return }
     const parsed = insertPayrollEntrySchema.partial().safeParse(req.body)
     if (!parsed.success) { res.status(400).json({ error: 'Invalid request body', details: parsed.error.flatten() }); return }
@@ -66,7 +67,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     if (!req.orgId) { res.status(404).json({ error: 'No organization found' }); return }
-    const existing = await db.query.payrollEntries.findFirst({ where: (p, { and, eq }) => and(eq(p.id, req.params.id), eq(p.orgId, req.orgId)) })
+    const existing = await db.query.payrollEntries.findFirst({ where: (p, { and, eq, isNull }) => and(eq(p.id, req.params.id), eq(p.orgId, req.orgId), req.demoSessionId ? eq(p.demoSessionId, req.demoSessionId) : isNull(p.demoSessionId)) })
     if (!existing) { res.status(404).json({ error: 'Payroll entry not found' }); return }
     await db.delete(payrollEntries).where(eq(payrollEntries.id, req.params.id))
     res.json({ ok: true })
@@ -78,7 +79,7 @@ router.get('/export/csv', async (req, res) => {
     if (!req.orgId) { res.status(404).json({ error: 'No organization found' }); return }
     const year = parseInt((req.query as any).year) || new Date().getFullYear()
     const rows = await db.query.payrollEntries.findMany({
-      where: (p, { and, eq }) => and(eq(p.orgId, req.orgId), gte(p.payDate, new Date(year, 0, 1)), lte(p.payDate, new Date(year, 11, 31))),
+      where: (p, { and, eq, isNull }) => and(eq(p.orgId, req.orgId), gte(p.payDate, new Date(year, 0, 1)), lte(p.payDate, new Date(year, 11, 31)), req.demoSessionId ? eq(p.demoSessionId, req.demoSessionId) : isNull(p.demoSessionId)),
       orderBy: (p, { desc }) => [desc(p.payDate)],
     })
     const header = 'Name,Type,Pay Date,Gross Pay,Hours\n'

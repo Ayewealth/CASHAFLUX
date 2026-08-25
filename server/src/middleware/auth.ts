@@ -2,7 +2,7 @@ import { type Request, type Response, type NextFunction } from 'express'
 import { auth } from '../auth'
 import { getUserOrg, getUserOrgs } from '../lib/org'
 import { db } from '../db/client'
-import { users } from '@shared/schema'
+import { organizations, users } from '@shared/schema'
 import { eq } from 'drizzle-orm'
 
 function parseCookie(cookie: string | undefined, name: string): string | undefined {
@@ -31,6 +31,16 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   } else {
     req.orgId = ''
     req.orgRole = ''
+  }
+  // Resolve the active demo session
+  if (req.orgId) {
+    const org = await db.query.organizations.findFirst({
+      where: (o, { eq }) => eq(o.id, req.orgId),
+      columns: { activeDemoSessionId: true },
+    })
+    req.demoSessionId = org?.activeDemoSessionId ?? null
+  } else {
+    req.demoSessionId = null
   }
   next()
 }

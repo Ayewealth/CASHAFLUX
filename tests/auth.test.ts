@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import express from 'express'
 
 const mockDb = {
-  query: { users: { findFirst: vi.fn() }, orgMembers: { findFirst: vi.fn(), findMany: vi.fn() }, organizations: { findMany: vi.fn() } },
+  query: { users: { findFirst: vi.fn() }, orgMembers: { findFirst: vi.fn(), findMany: vi.fn() }, organizations: { findFirst: vi.fn(), findMany: vi.fn() } },
   update: vi.fn().mockReturnThis(),
   set: vi.fn().mockReturnThis(),
   where: vi.fn().mockReturnThis(),
@@ -58,6 +58,7 @@ describe('requireAuth', () => {
       user: { id: 'user-1', name: 'Test', email: 'test@test.com' },
       session: { id: 's1', expiresAt: new Date() },
     })
+    mockDb.query.organizations.findFirst.mockResolvedValue({ activeDemoSessionId: null })
     let captured: any = {}
     app.get('/test', (await import('../server/src/middleware/auth')).requireAuth, (req: any, res: any) => {
       captured = { user: req.user, orgId: req.orgId, orgRole: req.orgRole }
@@ -76,6 +77,7 @@ describe('requireAuth', () => {
       user: { id: 'user-1', name: 'Test', email: 'test@test.com' },
       session: { id: 's1', expiresAt: new Date() },
     })
+    mockDb.query.organizations.findFirst.mockResolvedValue({ activeDemoSessionId: null })
     const { getUserOrgs } = await import('../server/src/lib/org')
     ;(getUserOrgs as any).mockResolvedValue([
       { orgId: 'org-1', role: 'owner', orgName: 'Org One' },

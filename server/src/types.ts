@@ -5,6 +5,7 @@ declare global {
       session?: { id: string; expiresAt: Date }
       orgId: string
       orgRole: string
+      demoSessionId: string | null
     }
   }
 }
