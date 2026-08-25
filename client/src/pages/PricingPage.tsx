@@ -83,9 +83,7 @@ export default function PricingPage() {
             </p>
             <div className="flex flex-wrap justify-center gap-2 mb-8">
               {['Invoicing', 'Expenses', 'Reports', 'Tax'].map((badge) => (
-                <span key={badge} className="inline-flex px-3 py-1 text-xs font-medium text-brand-navy bg-brand-blue-light rounded-full">
-                  {badge}
-                </span>
+                <span key={badge} className="text-xs font-bold text-brand-navy">{badge}</span>
               ))}
             </div>
             <div className="flex justify-center items-center gap-3">

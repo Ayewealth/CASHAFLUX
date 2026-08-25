@@ -577,7 +577,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <SmoothScrollReveal>
             <div className="text-center max-w-2xl mx-auto mb-12">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-brand-navy bg-brand-blue-light rounded-full mb-4">
+              <span className="text-xs font-bold text-brand-navy uppercase tracking-wider mb-4">
                 Testimonials
               </span>
               <h2 className="text-3xl sm:text-4xl font-bold font-heading text-brand-navy tracking-tight mb-4">
@@ -686,7 +686,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <SmoothScrollReveal>
             <div className="text-center max-w-2xl mx-auto mb-16">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-brand-navy bg-brand-blue-light rounded-full mb-4">
+              <span className="text-xs font-bold text-brand-navy uppercase tracking-wider mb-4">
                 Pricing
               </span>
               <h2 className="text-3xl sm:text-4xl font-bold font-heading text-brand-navy tracking-tight mb-4">
