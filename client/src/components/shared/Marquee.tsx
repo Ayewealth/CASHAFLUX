@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 
 interface MarqueeProps {
-  items: { label: string; icon?: React.ReactNode }[]
+  items: { label: string; icon?: React.ReactNode; imgSrc?: string }[]
   speed?: number
   className?: string
 }
@@ -15,7 +15,7 @@ export default function Marquee({ items, speed = 30, className = '' }: MarqueePr
       <div className={`flex flex-wrap justify-center gap-8 ${className}`}>
         {items.map((item) => (
           <div key={item.label} className="flex items-center gap-2 text-text-muted/40 font-bold text-lg tracking-tight">
-            {item.icon}
+            {item.imgSrc ? <img src={item.imgSrc} alt={item.label} className="h-5 w-auto" /> : item.icon}
             {item.label}
           </div>
         ))}
@@ -37,7 +37,7 @@ export default function Marquee({ items, speed = 30, className = '' }: MarqueePr
             key={`${item.label}-${i}`}
             className="flex items-center gap-2 text-text-muted/40 font-bold text-lg tracking-tight shrink-0"
           >
-            {item.icon}
+            {item.imgSrc ? <img src={item.imgSrc} alt={item.label} className="h-5 w-auto" /> : item.icon}
             {item.label}
           </div>
         ))}

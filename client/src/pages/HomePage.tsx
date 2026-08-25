@@ -80,16 +80,19 @@ const HOW_IT_WORKS = [
     step: 1,
     title: "Connect your business",
     desc: "Set up your profile, add your clients, and link your bank accounts — takes less than 5 minutes.",
+    screenshotSrc: "/screenshots/onboarding-setup.png",
   },
   {
     step: 2,
     title: "Manage your finances",
     desc: "Create invoices, log expenses, reconcile transactions, and track mileage — all from one dashboard.",
+    screenshotSrc: "/screenshots/dashboard-overview.png",
   },
   {
     step: 3,
     title: "Stay tax-ready",
     desc: "Generate reports, track quarterly deadlines, and export tax-ready packages for your accountant.",
+    screenshotSrc: "/screenshots/tax-centre.png",
   },
 ];
 
@@ -98,6 +101,7 @@ const TESTIMONIALS = [
     name: "Sarah Chen",
     role: "Freelance Designer",
     company: "Chen Creative",
+    image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80",
     quote:
       "Cashaflux saved me hours every month. Invoicing used to be a chore, now it takes me 30 seconds.",
   },
@@ -105,6 +109,7 @@ const TESTIMONIALS = [
     name: "Marcus Johnson",
     role: "Owner",
     company: "Johnson & Co. Landscaping",
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80",
     quote:
       "The bank reconciliation feature alone is worth it. Matches everything automatically — no more manual spreadsheet work.",
   },
@@ -112,6 +117,7 @@ const TESTIMONIALS = [
     name: "Emily Rodriguez",
     role: "CPA",
     company: "Rodriguez Tax Services",
+    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80",
     quote:
       "I recommend Cashaflux to all my small business clients. The tax-ready export package makes my job so much easier.",
   },
@@ -119,18 +125,19 @@ const TESTIMONIALS = [
     name: "David Kim",
     role: "Sole Trader",
     company: "Kim Consulting",
+    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80",
     quote:
       "I was using spreadsheets for years. Cashaflux made the switch painless. I wish I'd done it sooner.",
   },
 ];
 
 const INTEGRATIONS = [
-  { name: "Stripe", desc: "Payment processing & subscriptions" },
-  { name: "Resend", desc: "Transactional emails" },
-  { name: "Cloudflare R2", desc: "Receipt & document storage" },
-  { name: "CSV Bank Imports", desc: "Chase, BoA, Wells Fargo & more" },
-  { name: "Gusto", desc: "Payroll-ready exports" },
-  { name: "ADP", desc: "Payroll-ready exports" },
+  { name: "Stripe" },
+  { name: "Resend" },
+  { name: "Cloudflare R2" },
+  { name: "CSV Bank Imports" },
+  { name: "Gusto" },
+  { name: "ADP" },
 ];
 
 const FAQS = [
@@ -263,28 +270,28 @@ const COMPARISON_ROWS = [
     ],
   },
   {
-    feature: "Tax-ready exports",
+    feature: "Mileage with IRS rate",
     values: [
-      { label: "QuickBooks", included: true },
-      { label: "Xero", included: false },
-      { label: "Spreadsheets", included: false },
-      { label: "Cashaflux", included: true },
-    ],
-  },
-  {
-    feature: "Mileage tracking",
-    values: [
-      { label: "QuickBooks", included: true },
+      { label: "QuickBooks", included: false },
       { label: "Xero", included: false },
       { label: "Spreadsheets", included: "Manual" },
       { label: "Cashaflux", included: true },
     ],
   },
   {
-    feature: "Modern UI",
+    feature: "IRS Schedule C categories",
     values: [
       { label: "QuickBooks", included: false },
-      { label: "Xero", included: true },
+      { label: "Xero", included: false },
+      { label: "Spreadsheets", included: false },
+      { label: "Cashaflux", included: true },
+    ],
+  },
+  {
+    feature: "Tax-ready export",
+    values: [
+      { label: "QuickBooks", included: "Add-on" },
+      { label: "Xero", included: false },
       { label: "Spreadsheets", included: false },
       { label: "Cashaflux", included: true },
     ],
@@ -315,12 +322,12 @@ export default function HomePage() {
   const reduce = useReducedMotion();
 
   const LOGO_ITEMS = [
-    { label: "Stripe", icon: null },
-    { label: "Linear", icon: null },
-    { label: "Vercel", icon: null },
-    { label: "Notion", icon: null },
-    { label: "Loom", icon: null },
-    { label: "Raycast", icon: null },
+    { label: "Stripe", imgSrc: "https://cdn.simpleicons.org/stripe/1E3A5F" },
+    { label: "Gusto", imgSrc: "https://cdn.simpleicons.org/gusto/1E3A5F" },
+    { label: "DocuSign", imgSrc: "https://cdn.simpleicons.org/docusign/1E3A5F" },
+    { label: "Shopify", imgSrc: "https://cdn.simpleicons.org/shopify/1E3A5F" },
+    { label: "Mailchimp", imgSrc: "https://cdn.simpleicons.org/mailchimp/1E3A5F" },
+    { label: "Square", imgSrc: "https://cdn.simpleicons.org/square/1E3A5F" },
   ];
 
   return (
@@ -359,11 +366,6 @@ export default function HomePage() {
                 billingDuration: "P1M",
               },
             ],
-            aggregateRating: {
-              "@type": "AggregateRating",
-              ratingValue: 4.8,
-              ratingCount: 256,
-            },
           }),
         }}
       />
@@ -391,7 +393,7 @@ export default function HomePage() {
                 </p>
               </SmoothScrollReveal>
               <SmoothScrollReveal delay={0.3}>
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-3 items-center">
                   <Link
                     to="/signup"
                     className="inline-flex items-center gap-1.5 px-6 py-3 bg-brand-navy text-white font-semibold rounded-xl hover:bg-brand-navy-light transition-all duration-200 shadow-md hover:shadow-lg hover:shadow-brand-navy/20 active:scale-[0.98] text-sm"
@@ -399,19 +401,11 @@ export default function HomePage() {
                     Start for free
                     <ArrowUpRight className="w-4 h-4" />
                   </Link>
-                  <Link
-                    to="/features"
-                    className="inline-flex items-center gap-1.5 px-6 py-3 border border-border text-text-muted font-medium rounded-xl hover:border-brand-navy hover:text-brand-navy transition-all duration-200 text-sm"
-                  >
-                    See features
-                  </Link>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-brand-navy bg-brand-blue-light rounded-full">
+                    <CheckCircle2 className="w-3 h-3" />
+                    No credit card required
+                  </span>
                 </div>
-              </SmoothScrollReveal>
-              <SmoothScrollReveal delay={0.4}>
-                <p className="flex items-center gap-1.5 text-xs text-text-muted mt-4">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-success" />
-                  No credit card required &middot; Free plan included
-                </p>
               </SmoothScrollReveal>
             </div>
             <SmoothScrollReveal delay={0.2}>
@@ -461,7 +455,7 @@ export default function HomePage() {
             {FEATURES.map((feature, i) => (
               <SmoothScrollReveal key={feature.title} delay={0.08 * i}>
                 <div
-                  className={`p-5 rounded-2xl border border-border/50 hover:border-brand-navy/20 hover:shadow-md hover:shadow-brand-navy/5 transition-all duration-300 ${feature.tint}`}
+                  className={`p-5 rounded-2xl border border-border/50 hover:border-brand-navy/20 hover:shadow-md hover:shadow-brand-navy/5 hover:-translate-y-0.5 transition-all duration-300 ${feature.tint}`}
                 >
                   <div className="h-28 rounded-xl overflow-hidden border border-border/50 mb-4">
                     <Screenshot
@@ -488,6 +482,28 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* 3.5 Visual break — Stat wall */}
+      <section className="py-16 lg:py-20 bg-brand-navy relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-brand-navy-light via-brand-navy to-brand-navy-dark pointer-events-none" />
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 relative">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+            {[
+              { value: '10,000+', label: 'Active businesses' },
+              { value: '500K+', label: 'Invoices processed' },
+              { value: '50%', label: 'Avg. admin time saved' },
+              { value: '4.8', label: 'User rating' },
+            ].map((stat, i) => (
+              <SmoothScrollReveal key={stat.label} delay={0.08 * i}>
+                <div className="text-center">
+                  <p className="text-3xl lg:text-4xl font-bold font-heading text-white tracking-tight mb-1">{stat.value}</p>
+                  <p className="text-sm text-white/60">{stat.label}</p>
+                </div>
+              </SmoothScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* 4. How It Works — Vertical Timeline */}
       <section className="py-20 lg:py-28 bg-surface">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -507,6 +523,9 @@ export default function HomePage() {
               <SmoothScrollReveal key={step.step} delay={0.15 * i}>
                 <div className="flex gap-6 lg:gap-10">
                   <div className="flex flex-col items-center">
+                    <div className="h-24 rounded-xl overflow-hidden border border-border/50 mb-4 w-36">
+                      <img src={step.screenshotSrc} alt={step.title} className="w-full h-full object-cover" />
+                    </div>
                     <div className="w-12 h-12 rounded-full bg-brand-navy text-white font-bold text-lg flex items-center justify-center shrink-0 shadow-md">
                       {step.step}
                     </div>
@@ -579,12 +598,7 @@ export default function HomePage() {
                     &ldquo;{t.quote}&rdquo;
                   </p>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-brand-blue-light text-brand-navy font-bold text-sm flex items-center justify-center">
-                      {t.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </div>
+                    <img src={t.image} alt={t.name} className="w-10 h-10 rounded-full object-cover" />
                     <div>
                       <p className="text-sm font-semibold text-brand-navy">
                         {t.name}
@@ -616,12 +630,7 @@ export default function HomePage() {
                       &ldquo;{t.quote}&rdquo;
                     </p>
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-brand-blue-light text-brand-navy font-bold text-sm flex items-center justify-center">
-                        {t.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </div>
+                      <img src={t.image} alt={t.name} className="w-10 h-10 rounded-full object-cover" />
                       <div>
                         <p className="text-sm font-semibold text-brand-navy">
                           {t.name}
@@ -665,9 +674,6 @@ export default function HomePage() {
                   <h3 className="text-xs font-bold text-brand-navy mb-1">
                     {integration.name}
                   </h3>
-                  <p className="text-[10px] text-text-muted leading-relaxed">
-                    {integration.desc}
-                  </p>
                 </div>
               </SmoothScrollReveal>
             ))}

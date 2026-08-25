@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { CheckCircle2, ArrowUpRight, ChevronDown, Users, Sparkles } from 'lucide-react'
+import { CheckCircle2, ArrowUpRight, ChevronDown, Users, Sparkles, Star } from 'lucide-react'
 import Header from '../components/public/Header'
 import Footer from '../components/public/Footer'
 import SmoothScrollReveal from '../components/shared/SmoothScrollReveal'
@@ -78,25 +78,39 @@ export default function PricingPage() {
             <h1 className="text-4xl sm:text-5xl font-bold font-heading text-brand-navy tracking-tight mb-4">
               Simple pricing. <span className="text-brand-navy">Powerful features.</span>
             </h1>
-            <p className="text-base text-text-muted leading-relaxed max-w-lg mx-auto mb-8">
+            <p className="text-base text-text-muted leading-relaxed max-w-lg mx-auto mb-6">
               Start free. Upgrade when you grow. No hidden fees, no surprises.
             </p>
-            <div className="flex justify-center">
-              <div className="flex gap-1 bg-white p-0.5 rounded-lg border border-border/50">
+            <div className="flex flex-wrap justify-center gap-2 mb-8">
+              {['Invoicing', 'Expenses', 'Reports', 'Tax'].map((badge) => (
+                <span key={badge} className="inline-flex px-3 py-1 text-xs font-medium text-brand-navy bg-brand-blue-light rounded-full">
+                  {badge}
+                </span>
+              ))}
+            </div>
+            <div className="flex justify-center items-center gap-3">
+              <div className="relative flex bg-white p-0.5 rounded-full border border-border/50">
+                <div
+                  className={`absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-full bg-brand-navy transition-all duration-200 ${billingInterval === 'annual' ? 'translate-x-full' : 'translate-x-0'}`}
+                />
                 <button
                   onClick={() => setBillingInterval('monthly')}
-                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${billingInterval === 'monthly' ? 'bg-white text-brand-navy shadow-sm' : 'text-text-muted hover:text-text'}`}
+                  className={`relative px-5 py-1.5 text-sm font-medium rounded-full transition-all ${billingInterval === 'monthly' ? 'text-white' : 'text-text-muted hover:text-text'}`}
                 >
                   Monthly
                 </button>
                 <button
                   onClick={() => setBillingInterval('annual')}
-                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${billingInterval === 'annual' ? 'bg-white text-brand-navy shadow-sm' : 'text-text-muted hover:text-text'}`}
+                  className={`relative px-5 py-1.5 text-sm font-medium rounded-full transition-all ${billingInterval === 'annual' ? 'text-white' : 'text-text-muted hover:text-text'}`}
                 >
-                  Annual{' '}
-                  <span className="text-[10px] text-brand-navy-light">Save 20%</span>
+                  Annual
                 </button>
               </div>
+              {billingInterval === 'annual' && (
+                <span className="inline-flex px-2.5 py-1 text-[11px] font-semibold text-success bg-green-50 rounded-full border border-green-200">
+                  Save ~20%
+                </span>
+              )}
             </div>
           </SmoothScrollReveal>
         </div>
@@ -114,12 +128,13 @@ export default function PricingPage() {
               return (
                 <SmoothScrollReveal key={plan.id} delay={0.1 * i}>
                   <div
-                    className={`relative flex flex-col p-6 rounded-2xl border-2 transition-all duration-300 hover:shadow-lg hover:shadow-brand-navy/5 ${
-                      plan.popular ? 'border-brand-navy bg-white shadow-md' : 'border-border/50 bg-white'
+                    className={`relative flex flex-col p-6 rounded-2xl border-2 transition-all duration-300 hover:shadow-lg hover:shadow-brand-navy/5 before:absolute before:inset-x-0 before:top-0 before:h-1 before:rounded-t-2xl ${
+                      plan.popular ? 'border-brand-navy bg-white shadow-md before:bg-gradient-to-r before:from-brand-navy before:to-brand-navy-light' : 'border-border/50 bg-white before:bg-gradient-to-r before:from-transparent before:to-transparent'
                     }`}
                   >
                     {plan.popular && (
-                      <span className="absolute -top-3 left-6 inline-flex px-3 py-0.5 text-xs font-semibold text-white bg-brand-navy rounded-full">
+                      <span className="absolute -top-3 left-6 inline-flex items-center gap-1 px-3 py-0.5 text-xs font-semibold text-white bg-brand-navy rounded-full">
+                        <Star className="w-3 h-3 fill-white" />
                         Most popular
                       </span>
                     )}
@@ -129,7 +144,12 @@ export default function PricingPage() {
                       <span className="text-sm text-text-muted">{period}</span>
                     </div>
                     {plan.monthly > 0 && billingInterval === 'annual' && (
-                      <p className="text-xs text-text-muted mb-3">${plan.monthly}/mo billed monthly</p>
+                      <p className="text-xs text-text-muted mb-1">${plan.monthly}/mo billed monthly</p>
+                    )}
+                    {plan.monthly > 0 && billingInterval === 'annual' && plan.annual && (
+                      <p className="text-xs text-success mb-3">
+                        Save ${plan.monthly * 12 - plan.annual}/yr vs monthly
+                      </p>
                     )}
                     <ul className="space-y-2.5 mb-6 flex-1">
                       {plan.features.map((f) => (

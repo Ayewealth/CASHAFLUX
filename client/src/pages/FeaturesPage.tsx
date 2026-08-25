@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { CheckCircle2, ArrowUpRight, Receipt, Banknote, BarChart3, PieChart, FileText, Users, Wallet, Calculator, Sparkles } from 'lucide-react'
+import { CheckCircle2, ArrowUpRight, Receipt, Banknote, BarChart3, PieChart, FileText, Users, Wallet, Calculator, Sparkles, Quote } from 'lucide-react'
 import Header from '../components/public/Header'
 import Footer from '../components/public/Footer'
 import SmoothScrollReveal from '../components/shared/SmoothScrollReveal'
@@ -9,7 +9,7 @@ import { usePageMeta } from '@/lib/usePageMeta'
 const PERSONAS = [
   { icon: Users, title: 'Freelancers & Sole Traders', color: 'from-brand-navy to-brand-navy-light', features: 'Simple invoicing, expense tracking, mileage log, tax-ready exports' },
   { icon: Wallet, title: 'Small Business Teams', color: 'from-blue-500 to-blue-600', features: 'Unlimited clients, bank reconciliation, recurring invoices, advanced reports' },
-  { icon: Calculator, title: 'Accountants & Bookkeepers', color: 'from-violet-500 to-violet-600', features: 'Read-only access, tax-ready packages, 1099 tracking, multi-client management' },
+  { icon: Calculator, title: 'Accountants & Bookkeepers', color: 'from-brand-navy to-brand-navy-light', features: 'Read-only access, tax-ready packages, 1099 tracking, multi-client management' },
 ]
 
 const FEATURES_DETAIL = [
@@ -38,7 +38,7 @@ const FEATURES_DETAIL = [
     screenshotSrc: '/screenshots/features-reports-card.png',
   },
   {
-    icon: FileText, title: 'Tax Centre', color: 'from-violet-500 to-violet-600',
+    icon: FileText, title: 'Tax Centre', color: 'from-brand-navy to-brand-navy-light',
     desc: 'Stay tax-ready year-round. Quarterly estimated tax reminders, 1099 contractor tracking, mileage log, and one-click accountant hand-off.',
     benefits: ['Quarterly tax deadline reminders', '1099-NEC contractor data export', 'Mileage log with IRS rate ($0.70/mi)', 'Tax-ready export package', 'Sales tax tracking by state', 'IRS category breakdown by tax year'],
     screenshotSrc: '/screenshots/features-tax-card.png',
@@ -50,13 +50,13 @@ const FEATURES_DETAIL = [
     screenshotSrc: '/screenshots/features-mileage-card.png',
   },
   {
-    icon: Calculator, title: 'Payroll Export', color: 'from-cyan-500 to-cyan-600',
+    icon: Calculator, title: 'Payroll Export', color: 'from-brand-navy to-brand-navy-light',
     desc: 'Record employee/contractor payments and export payroll-ready CSVs compatible with Gusto, ADP, and Paychex.',
     benefits: ['W-2 and 1099 payment tracking', 'Payroll register with CSV export', 'Auto-posting to Wages category', 'MTD and YTD payroll totals', 'Gusto-compatible format', 'ADP and Paychex compatible'],
     screenshotSrc: '/screenshots/features-payroll-card.png',
   },
   {
-    icon: Users, title: 'Team Collaboration', color: 'from-indigo-500 to-indigo-600',
+    icon: Users, title: 'Team Collaboration', color: 'from-brand-blue to-brand-navy',
     desc: 'Invite team members with granular role-based access. Owner, Admin, Accountant (read-only), and Member roles with activity audit logging.',
     benefits: ['Role-based access control', 'Accountant read-only mode', 'Activity audit log', 'Invite by email via Resend', 'Revoke access anytime', 'Up to 5 team members (Business)'],
     screenshotSrc: '/screenshots/features-team-card.png',
@@ -69,6 +69,9 @@ const COMING_SOON = [
   { title: 'Multi-Currency', desc: 'Support for international clients and multi-currency invoicing' },
   { title: 'Payment Links', desc: 'Accept credit card payments directly from your invoices via Stripe' },
 ]
+
+// Alternation pattern: 0=text-left, 1=image-left, 2=text-left, 3=break, 4=image-left, 5=text-left, 6=break, 7=image-left
+const IMAGE_LEFT_INDICES = new Set([1, 4, 7])
 
 export default function FeaturesPage() {
   usePageMeta({ title: 'Features', description: 'Discover Cashaflux features: smart invoicing, expense tracking, bank reconciliation, financial reports, and tax-ready exports.' })
@@ -118,7 +121,7 @@ export default function FeaturesPage() {
           <div className="grid md:grid-cols-3 gap-6">
             {PERSONAS.map((p, i) => (
               <SmoothScrollReveal key={p.title} delay={0.1 * i}>
-                <div className="p-6 rounded-2xl border border-border/50 bg-white hover:shadow-md hover:shadow-brand-navy/5 transition-all duration-300">
+                <div className="p-6 rounded-2xl border border-border/50 bg-white hover:shadow-md hover:shadow-brand-navy/5 hover:-translate-y-0.5 transition-all duration-300">
                   <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${p.color} flex items-center justify-center mb-4 shadow-sm`}>
                     <p.icon className="w-6 h-6 text-white" />
                   </div>
@@ -131,98 +134,105 @@ export default function FeaturesPage() {
         </div>
       </section>
 
-      {/* 3. Feature deep-dives */}
-      {FEATURES_DETAIL.slice(0, 2).map((feature, i) => (
-        <section key={feature.title} className={`py-16 lg:py-24 ${i % 2 === 1 ? 'bg-white' : ''}`}>
-          <div className="max-w-7xl mx-auto px-6 lg:px-8">
-            <div className={`grid lg:grid-cols-2 gap-12 lg:gap-16 items-center ${i % 2 === 1 ? 'lg:flex-row-reverse' : ''}`}>
-              <SmoothScrollReveal delay={0.1}>
-                <div>
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 shadow-sm`}>
-                    <feature.icon className="w-6 h-6 text-white" />
+      {/* 3. Feature deep-dives — all 8 features */}
+      {FEATURES_DETAIL.slice(0, 4).map((feature, i) => {
+        const imageLeft = IMAGE_LEFT_INDICES.has(i)
+        return (
+          <section key={feature.title} className={`py-16 lg:py-24 ${i % 2 === 0 ? 'bg-white' : 'bg-surface'}`}>
+            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+              <div className={`grid lg:grid-cols-2 gap-12 lg:gap-16 items-center ${imageLeft ? '' : ''}`}>
+                <SmoothScrollReveal delay={imageLeft ? 0.2 : 0.1} className={imageLeft ? 'lg:order-2' : ''}>
+                  <div>
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 shadow-sm`}>
+                      <feature.icon className="w-6 h-6 text-white" />
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-bold font-heading text-brand-navy tracking-tight mb-3">{feature.title}</h2>
+                    <p className="text-base text-text-muted leading-relaxed mb-6">{feature.desc}</p>
+                    <ul className="space-y-2.5">
+                      {feature.benefits.map((b) => (
+                        <li key={b} className="text-sm text-text-muted flex items-start gap-2.5">
+                          <CheckCircle2 className="w-4 h-4 text-brand-navy shrink-0 mt-0.5" />
+                          {b}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-bold font-heading text-brand-navy tracking-tight mb-3">{feature.title}</h2>
-                  <p className="text-base text-text-muted leading-relaxed mb-6">{feature.desc}</p>
-                  <ul className="space-y-2.5">
-                    {feature.benefits.map((b) => (
-                      <li key={b} className="text-sm text-text-muted flex items-start gap-2.5">
-                        <CheckCircle2 className="w-4 h-4 text-brand-navy shrink-0 mt-0.5" />
-                        {b}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </SmoothScrollReveal>
-              <SmoothScrollReveal delay={0.2}>
-                <div className="relative">
-                  <FeaturePreview
-                    label={feature.title}
-                    screenshotSrc={feature.screenshotSrc}
-                    screenshotAlt={`${feature.title} screenshot`}
-                  />
-                </div>
-              </SmoothScrollReveal>
+                </SmoothScrollReveal>
+                <SmoothScrollReveal delay={imageLeft ? 0.1 : 0.2} className={imageLeft ? 'lg:order-1' : ''}>
+                  <div className="relative">
+                    <div className="absolute -inset-4 bg-gradient-to-br from-brand-navy/5 via-brand-navy/[0.02] to-transparent rounded-3xl" />
+                    <FeaturePreview
+                      label={feature.title}
+                      screenshotSrc={feature.screenshotSrc}
+                      screenshotAlt={`${feature.title} screenshot`}
+                    />
+                  </div>
+                </SmoothScrollReveal>
+              </div>
             </div>
-          </div>
-        </section>
-      ))}
+          </section>
+        )
+      })}
 
-      {/* Break zigzag — Full width hero feature */}
-      <section className="py-16 lg:py-24 bg-gradient-to-br from-brand-navy/5 to-brand-navy/5">
-        <div className="max-w-5xl mx-auto px-6 lg:px-8 text-center">
+      {/* Visual break — testimonial / stat bar */}
+      <section className="py-16 lg:py-20 bg-brand-navy relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-brand-navy-light via-brand-navy to-brand-navy-dark pointer-events-none" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '24px 24px' }} />
+        <div className="max-w-4xl mx-auto px-6 lg:px-8 text-center relative">
           <SmoothScrollReveal>
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-brand-navy to-brand-navy-light flex items-center justify-center mx-auto mb-5 shadow-md">
-              <Receipt className="w-7 h-7 text-white" />
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-bold font-heading text-brand-navy tracking-tight mb-4">
-              Smart Invoicing — your most-used feature
-            </h2>
-            <p className="text-base text-text-muted leading-relaxed max-w-2xl mx-auto mb-8">
-              The heart of Cashaflux. Create, send, track, and get paid — all from one place.
+            <Quote className="w-8 h-8 text-white/20 mx-auto mb-4" />
+            <p className="text-xl lg:text-2xl font-medium text-white/90 leading-relaxed mb-6 max-w-2xl mx-auto">
+              "I went from spreadsheets to Cashaflux in one afternoon. Best decision I've made for my business."
             </p>
-            <Link
-              to="/signup"
-              className="inline-flex items-center gap-1.5 px-6 py-3 bg-brand-navy text-white font-semibold rounded-xl hover:bg-brand-navy-dark transition-all duration-200 shadow-md active:scale-[0.98] text-sm"
-            >
-              Start for free <ArrowUpRight className="w-4 h-4" />
-            </Link>
+            <div className="flex items-center justify-center gap-4 text-sm text-white/60">
+              <span className="font-semibold text-white/80">Sarah Chen</span>
+              <span className="w-px h-4 bg-white/20" />
+              <span>Freelance Designer, Chen Creative</span>
+            </div>
           </SmoothScrollReveal>
         </div>
       </section>
 
-      {/* Remaining features - 2-col grid */}
-      <section className="py-16 lg:py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-6">
-            {FEATURES_DETAIL.slice(2).map((feature, i) => (
-              <SmoothScrollReveal key={feature.title} delay={0.08 * i}>
-                <div className="p-6 rounded-2xl border border-border/50 bg-white hover:shadow-md hover:border-brand-navy/20 transition-all duration-300">
-                  {feature.screenshotSrc && (
-                    <div className="h-28 rounded-xl overflow-hidden border border-border/50 mb-4">
-                      <img src={feature.screenshotSrc} alt={feature.title} className="w-full h-full object-cover" />
+      {/* Features 5-8 */}
+      {FEATURES_DETAIL.slice(4).map((feature, i) => {
+        const actualIndex = i + 4
+        const imageLeft = IMAGE_LEFT_INDICES.has(actualIndex)
+        return (
+          <section key={feature.title} className={`py-16 lg:py-24 ${actualIndex % 2 === 0 ? 'bg-white' : 'bg-surface'}`}>
+            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+              <div className={`grid lg:grid-cols-2 gap-12 lg:gap-16 items-center ${imageLeft ? '' : ''}`}>
+                <SmoothScrollReveal delay={imageLeft ? 0.2 : 0.1} className={imageLeft ? 'lg:order-2' : ''}>
+                  <div>
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 shadow-sm`}>
+                      <feature.icon className="w-6 h-6 text-white" />
                     </div>
-                  )}
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center shadow-sm`}>
-                      <feature.icon className="w-5 h-5 text-white" />
-                    </div>
-                    <h3 className="text-base font-bold text-brand-navy">{feature.title}</h3>
+                    <h2 className="text-2xl sm:text-3xl font-bold font-heading text-brand-navy tracking-tight mb-3">{feature.title}</h2>
+                    <p className="text-base text-text-muted leading-relaxed mb-6">{feature.desc}</p>
+                    <ul className="space-y-2.5">
+                      {feature.benefits.map((b) => (
+                        <li key={b} className="text-sm text-text-muted flex items-start gap-2.5">
+                          <CheckCircle2 className="w-4 h-4 text-brand-navy shrink-0 mt-0.5" />
+                          {b}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <p className="text-sm text-text-muted leading-relaxed mb-4">{feature.desc}</p>
-                  <ul className="space-y-2">
-                    {feature.benefits.slice(0, 3).map((b) => (
-                      <li key={b} className="text-xs text-text-muted flex items-start gap-2">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-brand-navy shrink-0 mt-0.5" />
-                        {b}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </SmoothScrollReveal>
-            ))}
-          </div>
-        </div>
-      </section>
+                </SmoothScrollReveal>
+                <SmoothScrollReveal delay={imageLeft ? 0.1 : 0.2} className={imageLeft ? 'lg:order-1' : ''}>
+                  <div className="relative">
+                    <div className="absolute -inset-4 bg-gradient-to-br from-brand-navy/5 via-brand-navy/[0.02] to-transparent rounded-3xl" />
+                    <FeaturePreview
+                      label={feature.title}
+                      screenshotSrc={feature.screenshotSrc}
+                      screenshotAlt={`${feature.title} screenshot`}
+                    />
+                  </div>
+                </SmoothScrollReveal>
+              </div>
+            </div>
+          </section>
+        )
+      })}
 
       {/* 5. Roadmap */}
       <section className="py-16 lg:py-24">
@@ -239,7 +249,7 @@ export default function FeaturesPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {COMING_SOON.map((item, i) => (
               <SmoothScrollReveal key={item.title} delay={0.08 * i}>
-                <div className="p-5 rounded-2xl border border-dashed border-border/70 bg-white/50">
+                <div className="p-5 rounded-2xl border border-dashed border-border/70 bg-white/50 hover:border-brand-navy/20 hover:bg-white transition-all duration-300">
                   <span className="inline-flex px-2 py-0.5 text-[10px] font-mono font-medium text-brand-navy bg-brand-blue-light rounded-full mb-3">
                     In development
                   </span>

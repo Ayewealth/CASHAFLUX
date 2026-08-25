@@ -13,7 +13,6 @@ const FOOTER_LINKS: Record<string, { label: string; href: string; disabled?: boo
   ],
   Support: [
     { label: 'Contact', href: '/contact' },
-    { label: 'Help Center', href: '#', disabled: true },
   ],
   Legal: [
     { label: 'Privacy Policy', href: '/privacy' },

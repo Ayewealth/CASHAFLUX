@@ -422,7 +422,23 @@ export default function BlogPostPage() {
 
       <Header />
 
-      <article className="pt-32 pb-20 lg:pt-40 lg:pb-28">
+      {/* Hero image — full width */}
+      {image && (
+        <section className="pt-32 lg:pt-40">
+          <div className="max-w-7xl mx-auto px-6 lg:px-8">
+            <SmoothScrollReveal>
+              <img
+                src={image}
+                alt={title}
+                className="rounded-2xl w-full h-64 lg:h-80 object-cover shadow-md"
+              />
+              <p className="text-xs text-text-muted mt-2 text-center">{title} &mdash; Cashaflux Blog</p>
+            </SmoothScrollReveal>
+          </div>
+        </section>
+      )}
+
+      <article className="pb-20 lg:pb-28">
         <div className="max-w-4xl mx-auto px-6 lg:px-8">
           <SmoothScrollReveal>
             <Link
@@ -445,11 +461,6 @@ export default function BlogPostPage() {
               <span>By {author}</span>
               {content && <span>{getReadTime(content)} min read</span>}
             </div>
-            {image && (
-              <div className="mb-8 rounded-2xl overflow-hidden border border-border/50">
-                <Screenshot fallback="Article header" src={image} alt={title} />
-              </div>
-            )}
           </SmoothScrollReveal>
 
           <div className="grid lg:grid-cols-[1fr_200px] gap-8 lg:gap-12">

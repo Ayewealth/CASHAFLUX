@@ -6,6 +6,7 @@ import Footer from '../components/public/Footer'
 import SmoothScrollReveal from '../components/shared/SmoothScrollReveal'
 import NewsletterForm from '../components/shared/NewsletterForm'
 import Screenshot from '../components/shared/Screenshot'
+import { Skeleton } from '../components/ui/skeleton'
 import { usePageMeta } from '@/lib/usePageMeta'
 
 interface BlogPost {
@@ -35,7 +36,7 @@ function getReadTime(text: string): number {
 
 export default function BlogIndexPage() {
   usePageMeta({ title: 'Blog', description: 'Small business finance tips, tax deadline guides, and product updates from the Cashaflux team.' })
-  const { data: posts } = useQuery<BlogPost[]>({
+  const { data: posts, isLoading } = useQuery<BlogPost[]>({
     queryKey: ['blog'],
     queryFn: async () => {
       const res = await fetch('/api/blog')
@@ -72,8 +73,37 @@ export default function BlogIndexPage() {
         </div>
       </section>
 
+      {/* Loading skeleton */}
+      {isLoading && (
+        <section className="pb-16 lg:pb-20">
+          <div className="max-w-7xl mx-auto px-6 lg:px-8">
+            <div className="rounded-2xl bg-gradient-to-br from-brand-navy/5 to-brand-navy/5 border border-border/50 p-8 lg:p-12">
+              <div className="grid lg:grid-cols-2 gap-8 items-center">
+                <div className="space-y-4">
+                  <Skeleton className="h-5 w-20" />
+                  <Skeleton className="h-8 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+                <Skeleton className="h-48 rounded-xl" />
+              </div>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-10">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="p-6 rounded-2xl border border-border/50 space-y-3">
+                  <Skeleton className="h-32 rounded-xl" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* 2. Featured Post */}
-      {featured && (
+      {!isLoading && featured && (
         <section className="pb-16 lg:pb-20">
           <div className="max-w-7xl mx-auto px-6 lg:px-8">
             <SmoothScrollReveal>
@@ -108,7 +138,7 @@ export default function BlogIndexPage() {
                       Read article <ArrowRight className="w-4 h-4" />
                     </span>
                   </div>
-                  <div className="hidden lg:block h-48 rounded-xl overflow-hidden border border-white/10">
+                  <div className="hidden lg:block h-48 rounded-xl shadow-md overflow-hidden border border-white/10">
                     <Screenshot fallback="Featured article" src={featured.image} alt={featured.title} />
                   </div>
                 </div>
@@ -126,7 +156,7 @@ export default function BlogIndexPage() {
               <SmoothScrollReveal key={post.id} delay={0.06 * i}>
                 <Link
                   to={`/blog/${post.slug}`}
-                  className="group block p-6 rounded-2xl bg-white border border-border/50 hover:border-brand-navy/20 hover:shadow-md hover:shadow-brand-navy/5 transition-all duration-300"
+                  className={`group block p-6 rounded-2xl ${i % 3 === 2 ? 'bg-brand-navy/[0.02]' : 'bg-white'} border border-border/50 hover:border-brand-navy/20 hover:shadow-md hover:shadow-brand-navy/5 transition-all duration-300`}
                 >
                   <div className="h-32 overflow-hidden rounded-xl border border-border/50 mb-4">
                     <Screenshot fallback="Blog thumbnail" src={post.image} alt={`${post.title} thumbnail`} />

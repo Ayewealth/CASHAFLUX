@@ -26,10 +26,27 @@ export default function ContactPage() {
   const [email, setEmail] = useState('')
   const [subject, setSubject] = useState('')
   const [message, setMessage] = useState('')
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [openFaq, setOpenFaq] = useState<number | null>(null)
+
+  function validate(): boolean {
+    const errs: Record<string, string> = {}
+    if (!name.trim()) errs.name = 'Name is required'
+    if (!email.trim()) errs.email = 'Email is required'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'Please enter a valid email address'
+    if (!subject.trim()) errs.subject = 'Subject is required'
+    if (!message.trim()) errs.message = 'Message is required'
+    setErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
+  function clearError(field: string) {
+    setErrors(prev => { const next = { ...prev }; delete next[field]; return next })
+  }
 
   const submitMutation = useMutation({
     mutationFn: async () => {
+      if (!validate()) throw new Error('Validation failed')
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -38,7 +55,7 @@ export default function ContactPage() {
       if (!res.ok) throw new Error('Failed to send')
     },
     onSuccess: () => {
-      setName(''); setEmail(''); setSubject(''); setMessage('')
+      setName(''); setEmail(''); setSubject(''); setMessage(''); setErrors({})
     },
   })
 
@@ -46,47 +63,12 @@ export default function ContactPage() {
     <div className="min-h-screen bg-white">
       <Header />
 
-      {/* 1. Hero — Split screen */}
+      {/* 1. Hero — Split layout */}
       <section className="pt-32 pb-16 lg:pt-40 lg:pb-24">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
-            <div>
-              <SmoothScrollReveal>
-                <h1 className="text-4xl sm:text-5xl font-bold text-brand-navy tracking-tight mb-4">
-                  We'd love to <span className="text-brand-navy">hear from you</span>
-                </h1>
-                <p className="text-base text-text-muted leading-relaxed mb-8">
-                  Have a question, feedback, or want to learn more? Send us a message and we'll get back to you within 24 hours.
-                </p>
-              </SmoothScrollReveal>
 
-              <SmoothScrollReveal delay={0.1}>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-4 rounded-xl bg-white border border-border/50">
-                    <Mail className="w-5 h-5 text-brand-navy" />
-                    <div>
-                      <p className="text-sm font-medium text-brand-navy">Email us</p>
-                      <p className="text-xs text-text-muted">hello@cashaflux.com</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-4 rounded-xl bg-white border border-border/50">
-                    <Clock className="w-5 h-5 text-brand-navy" />
-                    <div>
-                      <p className="text-sm font-medium text-brand-navy">Response time</p>
-                      <p className="text-xs text-text-muted">Within 24 hours on business days</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-4 rounded-xl bg-white border border-border/50">
-                    <MessageSquare className="w-5 h-5 text-brand-navy" />
-                    <div>
-                      <p className="text-sm font-medium text-brand-navy">Based in</p>
-                      <p className="text-xs text-text-muted">United States</p>
-                    </div>
-                  </div>
-                </div>
-              </SmoothScrollReveal>
-            </div>
-
+            {/* Left: Form */}
             <SmoothScrollReveal delay={0.2}>
               <div className="bg-white rounded-2xl border border-border/50 p-6 sm:p-8 shadow-sm">
                 <h2 className="text-lg font-bold text-brand-navy mb-6">Send us a message</h2>
@@ -101,41 +83,81 @@ export default function ContactPage() {
                   </div>
                 ) : (
                   <form
-                    onSubmit={(e) => { e.preventDefault(); submitMutation.mutate() }}
+                    onSubmit={(e) => { e.preventDefault(); if (validate()) submitMutation.mutate() }}
                     className="space-y-4"
                   >
-                    <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-brand-navy mb-1.5">Name</label>
-                      <input id="name" type="text" required value={name} onChange={e => setName(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-white text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy transition-all" placeholder="Your name" />
-                    </div>
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-brand-navy mb-1.5">Email</label>
-                      <input id="email" type="email" required value={email} onChange={e => setEmail(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-white text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy transition-all" placeholder="you@example.com" />
-                    </div>
-                    <div>
-                      <label htmlFor="subject" className="block text-sm font-medium text-brand-navy mb-1.5">Subject</label>
-                      <input id="subject" type="text" required value={subject} onChange={e => setSubject(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-white text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy transition-all" placeholder="How can we help?" />
-                    </div>
-                    <div>
-                      <label htmlFor="message" className="block text-sm font-medium text-brand-navy mb-1.5">Message</label>
-                      <textarea id="message" required rows={5} value={message} onChange={e => setMessage(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-white text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy transition-all resize-none" placeholder="Tell us more..." />
-                    </div>
+<div>
+  <label htmlFor="name" className="block text-sm font-medium text-brand-navy mb-1.5">Name</label>
+  <input id="name" type="text" value={name} onChange={e => { setName(e.target.value); clearError('name') }}
+    className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-brand-navy/20 transition-all ${errors.name ? 'border-danger' : 'border-border focus:border-brand-navy'}`} placeholder="Your name" />
+  {errors.name && <p className="text-xs text-danger mt-1">{errors.name}</p>}
+</div>
+<div>
+  <label htmlFor="email" className="block text-sm font-medium text-brand-navy mb-1.5">Email</label>
+  <input id="email" type="email" value={email} onChange={e => { setEmail(e.target.value); clearError('email') }}
+    className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-brand-navy/20 transition-all ${errors.email ? 'border-danger' : 'border-border focus:border-brand-navy'}`} placeholder="you@example.com" />
+  {errors.email && <p className="text-xs text-danger mt-1">{errors.email}</p>}
+</div>
+<div>
+  <label htmlFor="subject" className="block text-sm font-medium text-brand-navy mb-1.5">Subject</label>
+  <input id="subject" type="text" value={subject} onChange={e => { setSubject(e.target.value); clearError('subject') }}
+    className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-brand-navy/20 transition-all ${errors.subject ? 'border-danger' : 'border-border focus:border-brand-navy'}`} placeholder="How can we help?" />
+  {errors.subject && <p className="text-xs text-danger mt-1">{errors.subject}</p>}
+</div>
+<div>
+  <label htmlFor="message" className="block text-sm font-medium text-brand-navy mb-1.5">Message</label>
+  <textarea id="message" rows={5} value={message} onChange={e => { setMessage(e.target.value); clearError('message') }}
+    className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-brand-navy/20 transition-all resize-none ${errors.message ? 'border-danger' : 'border-border focus:border-brand-navy'}`} placeholder="Tell us more..." />
+  {errors.message && <p className="text-xs text-danger mt-1">{errors.message}</p>}
+</div>
                     <button type="submit" disabled={submitMutation.isPending}
                       className="inline-flex items-center justify-center gap-1.5 w-full px-5 py-2.5 bg-brand-navy text-white font-semibold rounded-xl hover:bg-brand-navy-dark transition-all duration-200 shadow-sm active:scale-[0.98] text-sm disabled:opacity-60">
                       {submitMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                       {submitMutation.isPending ? 'Sending...' : 'Send message'}
                     </button>
                     {submitMutation.isError && (
-                      <p className="text-xs text-danger">Failed to send. Please try again or email us directly.</p>
+                      <div className="p-3 rounded-xl bg-danger/5 border border-danger/20 text-xs text-danger">
+                        <p className="font-medium mb-0.5">Failed to send</p>
+                        <p>This could be a temporary issue. Try again in a moment, or reach us directly at <strong>support@cashaflux.com</strong>.</p>
+                      </div>
                     )}
                   </form>
                 )}
               </div>
             </SmoothScrollReveal>
+
+            {/* Right: Brand info panel — hidden on mobile */}
+            <div className="hidden lg:flex flex-col justify-between p-10 rounded-2xl bg-gradient-to-br from-brand-navy to-brand-navy/90 text-white relative overflow-hidden">
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-4 right-4 w-40 h-40 opacity-10"
+                  style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+                <div className="absolute bottom-4 left-4 w-32 h-32 opacity-10"
+                  style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '12px 12px' }} />
+              </div>
+              <div className="relative">
+                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6">
+                  We'd love to <br />hear from you
+                </h1>
+                <div className="space-y-6">
+                  <div>
+                    <p className="text-sm font-medium text-white/80 mb-1">Email us</p>
+                    <p className="text-base text-white">support@cashaflux.com</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-white/80 mb-1">Response time</p>
+                    <p className="text-base text-white">We typically respond within 24 hours</p>
+                  </div>
+                </div>
+              </div>
+              <div className="relative">
+                <p className="text-sm font-medium text-white/60 mb-3">Follow us</p>
+                <div className="flex gap-3">
+                  <a href="https://twitter.com/cashaflux" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 hover:text-white transition-all text-xs font-medium">X</a>
+                  <a href="https://linkedin.com/company/cashaflux" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 hover:text-white transition-all text-xs font-medium">in</a>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
@@ -211,9 +233,8 @@ export default function ContactPage() {
               Stay up to date with product updates, tips, and news.
             </p>
             <div className="flex justify-center gap-4 mb-8">
-              <a href="#" className="text-sm text-white/50 hover:text-white transition-colors px-4 py-2 border border-white/20 rounded-xl">Twitter</a>
-              <a href="#" className="text-sm text-white/50 hover:text-white transition-colors px-4 py-2 border border-white/20 rounded-xl">LinkedIn</a>
-              <a href="#" className="text-sm text-white/50 hover:text-white transition-colors px-4 py-2 border border-white/20 rounded-xl">GitHub</a>
+              <a href="https://twitter.com/cashaflux" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white transition-colors px-4 py-2 border border-white/20 rounded-xl">Twitter</a>
+              <a href="https://linkedin.com/company/cashaflux" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white transition-colors px-4 py-2 border border-white/20 rounded-xl">LinkedIn</a>
             </div>
             <p className="text-sm text-white/40 mb-6">Or get started right away</p>
             <a

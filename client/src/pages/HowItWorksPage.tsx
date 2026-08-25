@@ -44,7 +44,7 @@ const STEPS = [
       '1099-NEC contractor data export',
       'Quarterly estimated tax deadline reminders',
     ],
-    color: 'from-violet-500 to-violet-600',
+    color: 'from-brand-navy to-brand-navy-light',
     image: 'tax',
   },
 ]
@@ -116,22 +116,18 @@ export default function HowItWorksPage() {
             </SmoothScrollReveal>
 
             <SmoothScrollReveal delay={0.2}>
-              <div className="bg-white rounded-2xl border border-border/50 shadow-xl shadow-brand-navy/5 p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <span className="text-xs text-text-muted font-mono">Progress</span>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="p-4 rounded-2xl bg-white border border-border/50 text-center shadow-sm">
+                  <p className="text-2xl font-bold text-brand-navy">5 min</p>
+                  <p className="text-xs text-text-muted mt-1">setup time</p>
                 </div>
-                <div className="space-y-6">
-                  {STEPS.map((s) => (
-                    <div key={s.step} className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${s.color} text-white font-bold text-sm flex items-center justify-center shrink-0`}>
-                        {s.step}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-brand-navy">{s.title}</p>
-                        <p className="text-xs text-text-muted">{s.benefits[0]}</p>
-                      </div>
-                    </div>
-                  ))}
+                <div className="p-4 rounded-2xl bg-white border border-border/50 text-center shadow-sm">
+                  <p className="text-2xl font-bold text-brand-navy">10K+</p>
+                  <p className="text-xs text-text-muted mt-1">active users</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-white border border-border/50 text-center shadow-sm">
+                  <p className="text-2xl font-bold text-brand-navy">4.8★</p>
+                  <p className="text-xs text-text-muted mt-1">rating</p>
                 </div>
               </div>
             </SmoothScrollReveal>
@@ -143,49 +139,82 @@ export default function HowItWorksPage() {
       {STEPS.map((step, i) => (
         <section key={step.step} className={`py-20 lg:py-28 ${i % 2 === 1 ? 'bg-white' : ''}`}>
           <div className="max-w-7xl mx-auto px-6 lg:px-8">
-            <div className={`grid lg:grid-cols-2 gap-12 lg:gap-16 items-center ${i % 2 === 1 ? 'lg:flex-row-reverse' : ''}`}>
-              <SmoothScrollReveal delay={0.1}>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${step.color} text-white font-bold text-sm flex items-center justify-center`}>
-                    {step.step}
-                  </div>
-                  <span className="text-xs font-mono font-medium text-text-muted uppercase tracking-wider">
-                    Step {step.step}
-                  </span>
+            {i === 1 ? (
+              <div className="relative rounded-3xl overflow-hidden min-h-[400px] flex items-center">
+                <div className="absolute inset-0">
+                  <img
+                    src={step.image === 'onboarding' ? '/screenshots/onboarding-setup.png' : step.image === 'dashboard' ? '/screenshots/dashboard-overview.png' : '/screenshots/tax-centre.png'}
+                    alt={`${step.title} screenshot`}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-                <h2 className="text-3xl sm:text-4xl font-bold font-heading text-brand-navy tracking-tight mb-4">{step.title}</h2>
-                <p className="text-base text-text-muted leading-relaxed mb-6">{step.desc}</p>
-                <ul className="space-y-3">
-                  {step.benefits.map((b) => (
-                    <li key={b} className="text-sm text-text-muted flex items-start gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-brand-navy shrink-0 mt-0.5" />
-                      {b}
-                    </li>
-                  ))}
-                </ul>
-              </SmoothScrollReveal>
+                <div className="absolute inset-0 bg-gradient-to-r from-brand-navy/85 to-brand-navy/40" />
+                <div className="relative z-10 p-12 lg:p-16 max-w-xl">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-white/20 to-white/10 text-white font-bold text-sm flex items-center justify-center border border-white/20">
+                      {step.step}
+                    </div>
+                    <span className="text-xs font-mono font-medium text-white/70 uppercase tracking-wider">
+                      Step {step.step}
+                    </span>
+                  </div>
+                  <h2 className="text-3xl sm:text-4xl font-bold font-heading text-white tracking-tight mb-4">{step.title}</h2>
+                  <p className="text-base text-white/80 leading-relaxed mb-6">{step.desc}</p>
+                  <ul className="space-y-3">
+                    {step.benefits.map((b) => (
+                      <li key={b} className="text-sm text-white/80 flex items-start gap-2.5">
+                        <CheckCircle2 className="w-4 h-4 text-white shrink-0 mt-0.5" />
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ) : (
+              <div className={`grid lg:grid-cols-2 gap-12 lg:gap-16 items-center ${i % 2 === 1 ? 'lg:flex-row-reverse' : ''}`}>
+                <SmoothScrollReveal delay={0.1}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${step.color} text-white font-bold text-sm flex items-center justify-center`}>
+                      {step.step}
+                    </div>
+                    <span className="text-xs font-mono font-medium text-text-muted uppercase tracking-wider">
+                      Step {step.step}
+                    </span>
+                  </div>
+                  <h2 className="text-3xl sm:text-4xl font-bold font-heading text-brand-navy tracking-tight mb-4">{step.title}</h2>
+                  <p className="text-base text-text-muted leading-relaxed mb-6">{step.desc}</p>
+                  <ul className="space-y-3">
+                    {step.benefits.map((b) => (
+                      <li key={b} className="text-sm text-text-muted flex items-start gap-2.5">
+                        <CheckCircle2 className="w-4 h-4 text-brand-navy shrink-0 mt-0.5" />
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
+                </SmoothScrollReveal>
 
-              <SmoothScrollReveal delay={0.2}>
-                <div className="relative">
-                  <div className="absolute -inset-4 bg-gradient-to-br from-brand-navy/5 via-brand-navy/[0.02] to-transparent rounded-3xl" />
-                  <div className="relative bg-white rounded-2xl border border-border/50 shadow-xl overflow-hidden p-6">
-                    <div className="aspect-[16/9] rounded-xl overflow-hidden border border-border/50">
-                      <Screenshot
-                        fallback={`${step.title} interface`}
-                        src={step.image === 'onboarding' ? '/screenshots/onboarding-setup.png' : step.image === 'dashboard' ? '/screenshots/dashboard-overview.png' : step.image === 'tax' ? '/screenshots/tax-centre.png' : undefined}
-                        alt={`${step.title} screenshot`}
-                      />
+                <SmoothScrollReveal delay={0.2}>
+                  <div className="relative">
+                    <div className="absolute -inset-4 bg-gradient-to-br from-brand-navy/5 via-brand-navy/[0.02] to-transparent rounded-3xl" />
+                    <div className="relative bg-white rounded-2xl border border-border/50 shadow-xl overflow-hidden p-6">
+                      <div className="aspect-[16/9] rounded-xl overflow-hidden border border-border/50">
+                        <Screenshot
+                          fallback={`${step.title} interface`}
+                          src={step.image === 'onboarding' ? '/screenshots/onboarding-setup.png' : step.image === 'dashboard' ? '/screenshots/dashboard-overview.png' : step.image === 'tax' ? '/screenshots/tax-centre.png' : undefined}
+                          alt={`${step.title} screenshot`}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </SmoothScrollReveal>
-            </div>
+                </SmoothScrollReveal>
+              </div>
+            )}
           </div>
         </section>
       ))}
 
       {/* 5. Testimonials */}
-      <section className="py-20 lg:py-28 bg-white">
+      <section className="py-20 lg:py-28 bg-gradient-to-b from-white via-brand-navy/[0.02] to-white">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <SmoothScrollReveal>
             <h2 className="text-2xl sm:text-3xl font-bold font-heading text-brand-navy tracking-tight text-center mb-4">
