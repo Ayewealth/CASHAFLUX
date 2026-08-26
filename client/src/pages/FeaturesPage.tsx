@@ -82,7 +82,12 @@ export default function FeaturesPage() {
             id: feature.title,
             content: (
               <div className="relative rounded-3xl overflow-hidden min-h-[70dvh] w-full max-w-5xl mx-auto flex items-center group">
-                <div className="absolute inset-0 bg-gradient-to-br from-brand-navy/90 via-brand-navy/60 to-accent-gold/30" />
+                {feature.screenshotSrc && (
+                  <div className="absolute inset-0">
+                    <img src={feature.screenshotSrc} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-navy/95 via-brand-navy/60 to-brand-navy/10" />
                 <div className="relative z-10 p-10 lg:p-16 max-w-2xl">
                   <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 shadow-lg`}>
                     <feature.icon className="w-6 h-6 text-white" />
