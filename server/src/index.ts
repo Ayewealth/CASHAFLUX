@@ -200,9 +200,19 @@ app.get('/robots.txt', (_req, res) => {
 Allow: /
 Allow: /pricing
 Allow: /features
+Allow: /features/invoicing
+Allow: /features/expenses
+Allow: /features/bank-reconciliation
+Allow: /features/reports
+Allow: /features/tax-centre
+Allow: /security
+Allow: /integrations
+Allow: /about
+Allow: /compare/quickbooks
+Allow: /compare/xero
+Allow: /compare/freshbooks
 Allow: /blog
 Allow: /how-it-works
-Allow: /about
 Allow: /contact
 Allow: /privacy
 Allow: /terms
@@ -222,8 +232,11 @@ Sitemap: https://cashaflux.com/sitemap.xml
 app.get('/sitemap.xml', async (_req, res) => {
   const BASE = 'https://cashaflux.com'
   const publicRoutes = [
-    '', '/pricing', '/features', '/blog', '/how-it-works',
-    '/about', '/contact', '/privacy', '/terms',
+    '', '/pricing', '/features', '/features/invoicing', '/features/expenses',
+    '/features/bank-reconciliation', '/features/reports', '/features/tax-centre',
+    '/security', '/integrations', '/about', '/compare/quickbooks',
+    '/compare/xero', '/compare/freshbooks', '/blog', '/how-it-works',
+    '/contact', '/privacy', '/terms',
   ]
   const urls = publicRoutes.map((path) => ({
     loc: `${BASE}${path}`,

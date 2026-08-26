@@ -64,7 +64,8 @@ export default function ContactPage() {
       <Header />
 
       {/* 1. Hero — Split layout */}
-      <section className="pt-32 pb-16 lg:pt-40 lg:pb-24">
+      <section className="pt-32 pb-16 lg:pt-40 lg:pb-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-navy/[0.02] via-accent-gold/[0.02] to-transparent pointer-events-none" />
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
 
@@ -136,7 +137,7 @@ export default function ContactPage() {
               </div>
               <div className="relative">
                 <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6">
-                  We'd love to <br />hear from you
+                  We'd love to <br /><span className="bg-gradient-to-r from-accent-gold-light via-accent-gold to-accent-gold-dark bg-clip-text text-transparent">hear from you</span>
                 </h1>
                 <div className="space-y-6">
                   <div>
@@ -224,8 +225,9 @@ export default function ContactPage() {
       </section>
 
       {/* 4. Social + CTA */}
-      <section className="py-16 lg:py-24 bg-brand-navy relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-navy/10 via-transparent to-transparent pointer-events-none" />
+      <section className="py-16 lg:py-24 bg-brand-navy-dark relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-accent-gold-dark/10 via-brand-navy-dark to-brand-navy pointer-events-none" />
+        <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #D4AF37 1px, transparent 0)', backgroundSize: '24px 24px' }} />
         <div className="max-w-3xl mx-auto px-6 lg:px-8 text-center relative">
           <SmoothScrollReveal>
             <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-4">Follow us on social</h2>

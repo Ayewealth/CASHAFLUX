@@ -5,6 +5,7 @@ import Header from '../components/public/Header'
 import Footer from '../components/public/Footer'
 import SmoothScrollReveal from '../components/shared/SmoothScrollReveal'
 import ComparisonTable from '../components/shared/ComparisonTable'
+import TiltCard from '../components/shared/TiltCard'
 import { usePageMeta } from '@/lib/usePageMeta'
 
 const PLANS = [
@@ -72,11 +73,12 @@ export default function PricingPage() {
       <Header />
 
       {/* 1. Hero */}
-      <section className="pt-32 pb-16 lg:pt-40 lg:pb-20 text-center">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+      <section className="pt-32 pb-16 lg:pt-40 lg:pb-20 text-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-brand-navy/[0.03] via-accent-gold/[0.02] to-transparent pointer-events-none" />
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 relative">
           <SmoothScrollReveal>
             <h1 className="text-4xl sm:text-5xl font-bold font-heading text-brand-navy tracking-tight mb-4">
-              Simple pricing. <span className="text-brand-navy">Powerful features.</span>
+              Simple pricing. <span className="bg-gradient-to-r from-brand-navy-light via-accent-gold to-accent-gold-dark bg-clip-text text-transparent">Powerful features.</span>
             </h1>
             <p className="text-base text-text-muted leading-relaxed max-w-lg mx-auto mb-6">
               Start free. Upgrade when you grow. No hidden fees, no surprises.
@@ -105,7 +107,7 @@ export default function PricingPage() {
                 </button>
               </div>
               {billingInterval === 'annual' && (
-                <span className="inline-flex px-2.5 py-1 text-[11px] font-semibold text-success bg-green-50 rounded-full border border-green-200">
+                <span className="inline-flex px-2.5 py-1 text-[11px] font-semibold bg-accent-gold-light text-accent-gold-dark rounded-full border border-accent-gold/30">
                   Save ~20%
                 </span>
               )}
@@ -125,50 +127,53 @@ export default function PricingPage() {
               const period = plan.monthly === 0 ? '' : (billingInterval === 'annual' ? '/yr' : '/mo')
               return (
                 <SmoothScrollReveal key={plan.id} delay={0.1 * i}>
-                  <div
-                    className={`relative flex flex-col p-6 rounded-2xl border-2 transition-all duration-300 hover:shadow-lg hover:shadow-brand-navy/5 before:absolute before:inset-x-0 before:top-0 before:h-1 before:rounded-t-2xl ${
-                      plan.popular ? 'border-brand-navy bg-white shadow-md before:bg-gradient-to-r before:from-brand-navy before:to-brand-navy-light' : 'border-border/50 bg-white before:bg-gradient-to-r before:from-transparent before:to-transparent'
-                    }`}
-                  >
-                    {plan.popular && (
-                      <span className="absolute -top-3 left-6 inline-flex items-center gap-1 px-3 py-0.5 text-xs font-semibold text-white bg-brand-navy rounded-full">
-                        <Star className="w-3 h-3 fill-white" />
-                        Most popular
-                      </span>
-                    )}
-                    <h3 className="text-lg font-bold text-brand-navy mb-1">{plan.name}</h3>
-                    <div className="flex items-baseline gap-1 mb-4">
-                      <span className="text-3xl font-bold text-brand-navy tracking-tight">{price}</span>
-                      <span className="text-sm text-text-muted">{period}</span>
-                    </div>
-                    {plan.monthly > 0 && billingInterval === 'annual' && (
-                      <p className="text-xs text-text-muted mb-1">${plan.monthly}/mo billed monthly</p>
-                    )}
-                    {plan.monthly > 0 && billingInterval === 'annual' && plan.annual && (
-                      <p className="text-xs text-success mb-3">
-                        Save ${plan.monthly * 12 - plan.annual}/yr vs monthly
-                      </p>
-                    )}
-                    <ul className="space-y-2.5 mb-6 flex-1">
-                      {plan.features.map((f) => (
-                        <li key={f} className="text-sm text-text-muted flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-brand-navy shrink-0 mt-0.5" />
-                          {f}
-                        </li>
-                      ))}
-                    </ul>
-                    <Link
-                      to="/signup"
-                      className={`inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-[0.98] ${
-                        plan.popular
-                          ? 'bg-brand-navy text-white hover:bg-brand-navy-dark shadow-sm'
-                          : 'border border-border text-text-muted hover:border-brand-navy hover:text-brand-navy'
+                  <TiltCard tiltDegree={3}>
+                    <div
+                      className={`relative flex flex-col p-6 rounded-2xl border-2 transition-all duration-300 hover:shadow-lg before:absolute before:inset-x-0 before:top-0 before:h-1 before:rounded-t-2xl ${
+                        plan.popular ? 'border-accent-gold bg-white shadow-md shadow-accent-gold/10 before:bg-gradient-to-r before:from-accent-gold-dark before:to-accent-gold' : 'border-border/50 bg-white before:bg-gradient-to-r before:from-transparent before:to-transparent'
                       }`}
                     >
-                      {plan.cta}
-                      <ArrowUpRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
+                      {plan.popular && (
+                        <span className="absolute -top-3 left-6 inline-flex items-center gap-1 px-3 py-0.5 text-xs font-semibold text-white bg-gradient-to-r from-accent-gold-dark to-accent-gold rounded-full">
+                          <Star className="w-3 h-3 fill-white" />
+                          Most popular
+                        </span>
+                      )}
+                      <h3 className="text-lg font-bold text-brand-navy mb-1">{plan.name}</h3>
+                      <div className="flex items-baseline gap-1 mb-4">
+                        <span className="text-3xl font-bold text-brand-navy tracking-tight">{price}</span>
+                        <span className="text-sm text-text-muted">{period}</span>
+                      </div>
+                      {plan.monthly > 0 && billingInterval === 'annual' && (
+                        <p className="text-xs text-text-muted mb-1">${plan.monthly}/mo billed monthly</p>
+                      )}
+                      {plan.monthly > 0 && billingInterval === 'annual' && plan.annual && (
+                        <p className="text-xs text-success mb-3">
+                          Save ${plan.monthly * 12 - plan.annual}/yr vs monthly
+                        </p>
+                      )}
+                      <ul className="space-y-2.5 mb-6 flex-1">
+                        {plan.features.map((f) => (
+                          <li key={f} className="text-sm text-text-muted flex items-start gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-accent-gold-dark shrink-0 mt-0.5" />
+                            {f}
+                          </li>
+                        ))}
+                      </ul>
+                      <Link
+                        to="/signup"
+                        className={`group relative inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-[0.98] overflow-hidden ${
+                          plan.popular
+                            ? 'bg-brand-navy text-white hover:bg-brand-navy-dark shadow-sm'
+                            : 'border border-border text-text-muted hover:border-accent-gold hover:text-accent-gold-dark'
+                        }`}
+                      >
+                        <span className="absolute inset-0 bg-gradient-to-r from-accent-gold/0 via-accent-gold/10 to-accent-gold/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                        <span className="relative">{plan.cta}</span>
+                        <ArrowUpRight className="relative w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  </TiltCard>
                 </SmoothScrollReveal>
               )
             })}
@@ -177,7 +182,7 @@ export default function PricingPage() {
       </section>
 
       {/* 3. Plan Comparison Table */}
-      <section className="py-16 lg:py-24 bg-white">
+      <section className="py-16 lg:py-24 bg-surface-warm">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <SmoothScrollReveal>
             <h2 className="text-2xl sm:text-3xl font-bold font-heading text-brand-navy tracking-tight text-center mb-12">
@@ -215,14 +220,16 @@ export default function PricingPage() {
           <div className="grid md:grid-cols-3 gap-6">
             {USE_CASES.map((uc, i) => (
               <SmoothScrollReveal key={uc.title} delay={0.1 * i}>
-                <div className="p-6 rounded-2xl bg-white border border-border/50 hover:shadow-md hover:border-brand-navy/20 transition-all duration-300">
-                  <uc.icon className="w-8 h-8 text-brand-navy mb-3" />
-                  <h3 className="text-lg font-bold text-brand-navy mb-1">{uc.title}</h3>
-                  <span className="inline-flex px-2 py-0.5 text-xs font-semibold text-brand-navy bg-brand-blue-light rounded-full mb-3">
-                    {uc.plan}
-                  </span>
-                  <p className="text-sm text-text-muted leading-relaxed">{uc.reason}</p>
-                </div>
+                <TiltCard tiltDegree={3}>
+                  <div className="p-6 rounded-2xl bg-white border border-border/50 hover:shadow-md hover:shadow-accent-gold/5 hover:border-brand-navy/20 transition-all duration-300">
+                    <uc.icon className="w-8 h-8 text-brand-navy mb-3" />
+                    <h3 className="text-lg font-bold text-brand-navy mb-1">{uc.title}</h3>
+                    <span className="inline-flex px-2 py-0.5 text-xs font-semibold bg-accent-gold-light text-accent-gold-dark rounded-full mb-3">
+                      {uc.plan}
+                    </span>
+                    <p className="text-sm text-text-muted leading-relaxed">{uc.reason}</p>
+                  </div>
+                </TiltCard>
               </SmoothScrollReveal>
             ))}
           </div>
@@ -241,7 +248,7 @@ export default function PricingPage() {
           <div className="space-y-3">
             {FAQS.map((faq, i) => (
               <SmoothScrollReveal key={i} delay={0.05 * i}>
-                <div className="bg-white rounded-xl border border-border/50 overflow-hidden">
+                <div className="bg-white rounded-xl border border-border/50 overflow-hidden hover:border-accent-gold/20 transition-colors duration-200">
                   <button
                     onClick={() => setOpenFaq(openFaq === i ? null : i)}
                     className="w-full flex items-center justify-between px-5 py-4 text-left text-sm font-medium text-brand-navy hover:bg-white transition-colors"
@@ -252,7 +259,7 @@ export default function PricingPage() {
                     />
                   </button>
                   {openFaq === i && (
-                    <div className="px-5 pb-4 text-sm text-text-muted leading-relaxed border-l-2 border-brand-navy ml-5 pl-3">
+                    <div className="px-5 pb-4 text-sm text-text-muted leading-relaxed border-l-2 border-accent-gold ml-5 pl-3">
                       {faq.a}
                     </div>
                   )}
@@ -264,22 +271,24 @@ export default function PricingPage() {
       </section>
 
       {/* 6. CTA */}
-      <section className="py-16 lg:py-24 bg-brand-navy relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-navy/10 via-transparent to-transparent pointer-events-none" />
+      <section className="py-20 lg:py-28 bg-brand-navy-dark relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-accent-gold-dark/10 via-brand-navy-dark to-brand-navy pointer-events-none" />
+        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #D4A574 1px, transparent 0)', backgroundSize: '24px 24px' }} />
         <div className="max-w-3xl mx-auto px-6 lg:px-8 text-center relative">
           <SmoothScrollReveal>
-            <h2 className="text-2xl sm:text-3xl font-bold font-heading text-white tracking-tight mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold font-heading text-white tracking-tight mb-4">
               Still not sure?
             </h2>
-            <p className="text-base text-white/60 leading-relaxed mb-8 max-w-lg mx-auto">
+            <p className="text-base text-white/50 leading-relaxed mb-8 max-w-lg mx-auto">
               Try Cashaflux free. No credit card required. Upgrade only when you're ready.
             </p>
             <Link
               to="/signup"
-              className="inline-flex items-center gap-1.5 px-6 py-3 bg-white text-brand-navy font-semibold rounded-xl hover:bg-brand-navy hover:text-white transition-all duration-200 shadow-lg active:scale-[0.98] text-sm"
+              className="group relative inline-flex items-center gap-1.5 px-8 py-3.5 bg-white text-brand-navy font-semibold rounded-xl hover:bg-accent-gold-light hover:text-accent-gold-dark transition-all duration-200 shadow-lg active:scale-[0.98] text-sm overflow-hidden"
             >
-              Start for free
-              <ArrowUpRight className="w-4 h-4" />
+              <span className="absolute inset-0 bg-gradient-to-r from-accent-gold/0 via-accent-gold/20 to-accent-gold/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+              <span className="relative">Start for free</span>
+              <ArrowUpRight className="relative w-4 h-4" />
             </Link>
           </SmoothScrollReveal>
         </div>

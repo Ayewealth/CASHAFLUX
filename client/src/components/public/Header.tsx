@@ -10,9 +10,10 @@ import Logo from '@/components/shared/Logo'
 
 const NAV_ITEMS = [
   { label: 'Features', href: '/features' },
+  { label: 'Integrations', href: '/integrations' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'How it works', href: '/how-it-works' },
-  // { label: 'About', href: '/about' },
+  { label: 'About', href: '/about' },
   { label: 'Blog', href: '/blog' },
   { label: 'Contact', href: '/contact' },
 ]
